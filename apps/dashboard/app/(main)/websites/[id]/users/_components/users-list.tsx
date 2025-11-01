@@ -434,7 +434,7 @@ export function UsersList({ websiteId }: UsersListProps) {
 
 			{/* Content */}
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-				<div className="overflow-auto" ref={setScrollContainerRef}>
+				<div className="h-full overflow-auto" ref={setScrollContainerRef}>
 					<Table>
 						<TableHeader className="sticky top-0 z-10 bg-muted/50 backdrop-blur-sm">
 							{table.getHeaderGroups().map((headerGroup) => (

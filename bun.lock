@@ -374,9 +374,6 @@
         "resend": "^4.2.0",
         "zod": "catalog:",
       },
-      "devDependencies": {
-        "typescript": "catalog:",
-      },
     },
     "packages/db": {
       "name": "@databuddy/db",
