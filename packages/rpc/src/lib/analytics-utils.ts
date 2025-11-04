@@ -1,14 +1,13 @@
 import { chQuery } from "@databuddy/db";
 import { TRPCError } from "@trpc/server";
 
-export interface AnalyticsStep {
+export type AnalyticsStep = {
 	step_number: number;
 	name: string;
 	type: "PAGE_VIEW" | "EVENT";
 	target: string;
 }
-
-export interface ProcessedAnalytics {
+export type ProcessedAnalytics = {
 	overall_conversion_rate: number;
 	total_users_entered: number;
 	total_users_completed: number;
@@ -24,9 +23,9 @@ export interface ProcessedAnalytics {
 		dropoff_rate: number;
 		avg_time_to_complete: number;
 	}>;
-}
+};
 
-export interface FunnelAnalytics {
+export type FunnelAnalytics = {
 	overall_conversion_rate: number;
 	total_users_entered: number;
 	total_users_completed: number;
@@ -44,9 +43,9 @@ export interface FunnelAnalytics {
 		dropoff_rate: number;
 		avg_time_to_complete: number;
 	}>;
-}
+};
 
-export interface ReferrerAnalytics {
+export type ReferrerAnalytics = {
 	referrer: string;
 	referrer_parsed: {
 		name: string;
@@ -57,7 +56,7 @@ export interface ReferrerAnalytics {
 	total_users: number;
 	completed_users: number;
 	conversion_rate: number;
-}
+};
 
 export const getTotalWebsiteUsers = async (
 	websiteId: string,
@@ -130,7 +129,6 @@ const buildStepQuery = (
 
 	// For custom EVENT, query both analytics.events and analytics.custom_events
 	const targetKey = `target_${step.step_number - 1}`;
-	const referrerSelectCustom = includeReferrer ? ", '' as referrer" : "";
 
 	return `
 		WITH visitor_referrers AS (
@@ -254,7 +252,7 @@ const calculateStepCounts = (
 				} else {
 					stepCounts.set(event.step_number, new Set([visitorId]));
 				}
-				currentStep++;
+				currentStep += 1;
 			}
 		}
 	}
@@ -340,7 +338,6 @@ type AllowedField =
 	| "path"
 	| "referrer"
 	| "user_agent"
-	| "ip_address"
 	| "country"
 	| "city"
 	| "device_type"
@@ -375,7 +372,6 @@ const ALLOWED_FIELDS: readonly AllowedField[] = [
 	"path",
 	"referrer",
 	"user_agent",
-	"ip_address",
 	"country",
 	"city",
 	"device_type",
@@ -717,7 +713,7 @@ const calculateReferrerStepCounts = (
 				} else {
 					stepCounts.set(currentStep, new Set([visitorId]));
 				}
-				currentStep++;
+				currentStep += 1;
 			}
 		}
 	}
