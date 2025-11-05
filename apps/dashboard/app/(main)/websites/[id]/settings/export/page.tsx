@@ -4,8 +4,8 @@ import {
 	CheckIcon,
 	DownloadIcon,
 	FileCodeIcon,
-	TableIcon,
 	FileTextIcon,
+	TableIcon,
 } from "@phosphor-icons/react";
 import dayjs from "dayjs";
 import { useParams } from "next/navigation";
@@ -124,35 +124,38 @@ export default function ExportPage() {
 							<Label className="font-medium text-sm">Export format</Label>
 						</div>
 						<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-							{formatOptions.map((format) => (
-								<button
-									className={`flex items-start gap-3 rounded-md border p-4 text-left transition-colors hover:border-primary/50 ${
-										selectedFormat === format.value
-											? "border-primary bg-primary/5"
-											: "border-border"
-									}`}
-									key={format.value}
-									onClick={() => setSelectedFormat(format.value)}
-									type="button"
-								>
-									<div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
-										<format.icon className="h-5 w-5" />
-									</div>
-									<div className="min-w-0 flex-1">
-										<div className="mb-1 flex items-center gap-2">
-											<span className="font-medium text-sm">
-												{format.label}
-											</span>
-											{selectedFormat === format.value && (
-												<CheckIcon className="h-4 w-4 text-primary" />
-											)}
+							{formatOptions.map((format) => {
+								const IconComponent = format.icon;
+								return (
+									<button
+										className={`flex items-start gap-3 rounded-md border p-4 text-left transition-colors hover:border-primary/50 ${
+											selectedFormat === format.value
+												? "border-primary bg-primary/5"
+												: "border-border"
+										}`}
+										key={format.value}
+										onClick={() => setSelectedFormat(format.value)}
+										type="button"
+									>
+										<div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
+											<IconComponent className="h-5 w-5" />
 										</div>
-										<p className="text-muted-foreground text-xs">
-											{format.description}
-										</p>
-									</div>
-								</button>
-							))}
+										<div className="min-w-0 flex-1">
+											<div className="mb-1 flex items-center gap-2">
+												<span className="font-medium text-sm">
+													{format.label}
+												</span>
+												{selectedFormat === format.value && (
+													<CheckIcon className="h-4 w-4 text-primary" />
+												)}
+											</div>
+											<p className="text-muted-foreground text-xs">
+												{format.description}
+											</p>
+										</div>
+									</button>
+								);
+							})}
 						</div>
 					</section>
 
