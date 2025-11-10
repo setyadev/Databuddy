@@ -20,7 +20,9 @@ export default function WebsiteLayout({ children }: WebsiteLayoutProps) {
 	const { id } = useParams();
 	const pathname = usePathname();
 	const queryClient = useQueryClient();
-	const { isTrackingSetup, isTrackingSetupLoading } = useTrackingSetup(id as string);
+	const { isTrackingSetup, isTrackingSetupLoading } = useTrackingSetup(
+		id as string
+	);
 	const { isLoading: isWebsiteLoading } = useWebsite(id as string);
 	const [isRefreshing, setIsRefreshing] = useAtom(isAnalyticsRefreshingAtom);
 	const toolbarRef = useRef<HTMLDivElement>(null);
@@ -61,7 +63,8 @@ export default function WebsiteLayout({ children }: WebsiteLayoutProps) {
 	}
 
 	const websiteId = id as string;
-	const isToolbarLoading = isWebsiteLoading || isTrackingSetupLoading || isTrackingSetup === null;
+	const isToolbarLoading =
+		isWebsiteLoading || isTrackingSetupLoading || isTrackingSetup === null;
 	const isToolbarDisabled = !isTrackingSetup || isToolbarLoading;
 
 	const handleRefresh = async () => {
@@ -106,9 +109,7 @@ export default function WebsiteLayout({ children }: WebsiteLayoutProps) {
 			<div
 				className={`${isAssistantPage ? "min-h-0 flex-1" : "min-h-0 flex-1 overflow-y-auto"}`}
 				style={
-					!isAssistantPage
-						? { paddingTop: `${toolbarHeight}px` }
-						: undefined
+					isAssistantPage ? undefined : { paddingTop: `${toolbarHeight}px` }
 				}
 			>
 				{children}
