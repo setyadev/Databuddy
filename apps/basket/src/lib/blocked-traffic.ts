@@ -84,10 +84,7 @@ export async function logBlockedTraffic(
 		};
 
 		sendEvent("analytics-blocked-traffic", blockedEvent);
-	} catch (error) {
-		console.error("Failed to send blocked traffic to Kafka", {
-			error: error as Error,
-		});
-		throw error;
+	} catch {
+		//
 	}
 }
