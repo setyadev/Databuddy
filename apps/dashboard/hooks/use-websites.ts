@@ -7,21 +7,21 @@ import type { QueryKey } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@/lib/orpc";
 
-type Website = InferSelectModel<typeof websites>;
-type WebsitesListData = {
+export type Website = InferSelectModel<typeof websites>;
+export type WebsitesListData = {
 	websites: Website[];
 	chartData: Record<string, ProcessedMiniChartData>;
 };
 
-const getWebsiteByIdKey = (id: string): QueryKey =>
+export const getWebsiteByIdKey = (id: string): QueryKey =>
 	orpc.websites.getById.queryOptions({ input: { id } }).queryKey;
 
-const getWebsitesListKey = (organizationId?: string): QueryKey =>
+export const getWebsitesListKey = (organizationId?: string): QueryKey =>
 	orpc.websites.listWithCharts.queryOptions({
 		input: { organizationId },
 	}).queryKey;
 
-const updateWebsiteInList = (
+export const updateWebsiteInList = (
 	old: WebsitesListData | undefined,
 	updatedWebsite: Website
 ): WebsitesListData | undefined => {
@@ -118,7 +118,7 @@ export function useCreateWebsite() {
 	});
 }
 
-const updateWebsiteCache = (
+export const updateWebsiteCache = (
 	queryClient: ReturnType<typeof useQueryClient>,
 	updatedWebsite: Website
 ) => {
@@ -129,9 +129,6 @@ const updateWebsiteCache = (
 		updateWebsiteInList(old, updatedWebsite)
 	);
 	queryClient.setQueryData(getByIdKey, updatedWebsite);
-
-	queryClient.invalidateQueries({ queryKey: getByIdKey });
-	queryClient.invalidateQueries({ queryKey: listKey });
 };
 
 export function useUpdateWebsite() {
@@ -143,19 +140,6 @@ export function useUpdateWebsite() {
 		},
 		onError: (error) => {
 			console.error("Failed to update website:", error);
-		},
-	});
-}
-
-export function useTogglePublicWebsite() {
-	const queryClient = useQueryClient();
-	return useMutation({
-		...orpc.websites.togglePublic.mutationOptions(),
-		onSuccess: (updatedWebsite: Website) => {
-			updateWebsiteCache(queryClient, updatedWebsite);
-		},
-		onError: (error) => {
-			console.error("Failed to toggle website privacy:", error);
 		},
 	});
 }

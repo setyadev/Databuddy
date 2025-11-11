@@ -6,6 +6,7 @@ import {
 	InfoIcon,
 	ShareIcon,
 } from "@phosphor-icons/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { useCallback } from "react";
 import { toast } from "sonner";
@@ -13,13 +14,25 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { useTogglePublicWebsite, useWebsite } from "@/hooks/use-websites";
+import {
+	updateWebsiteCache,
+	useWebsite,
+	type Website,
+} from "@/hooks/use-websites";
+import { orpc } from "@/lib/orpc";
 
 export default function PrivacyPage() {
 	const params = useParams();
 	const websiteId = params.id as string;
-	const { data: websiteData, refetch } = useWebsite(websiteId);
-	const toggleMutation = useTogglePublicWebsite();
+	const { data: websiteData } = useWebsite(websiteId);
+	const queryClient = useQueryClient();
+
+	const toggleMutation = useMutation({
+		...orpc.websites.togglePublic.mutationOptions(),
+		onSuccess: (updatedWebsite: Website) => {
+			updateWebsiteCache(queryClient, updatedWebsite);
+		},
+	});
 
 	const isPublic = websiteData?.isPublic ?? false;
 	const shareableLink = websiteData
@@ -39,8 +52,7 @@ export default function PrivacyPage() {
 				error: "Failed to update privacy settings",
 			}
 		);
-		refetch();
-	}, [websiteData, websiteId, isPublic, toggleMutation, refetch]);
+	}, [websiteData, websiteId, isPublic, toggleMutation]);
 
 	const handleCopyLink = useCallback(() => {
 		if (!shareableLink) {
