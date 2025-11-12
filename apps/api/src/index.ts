@@ -60,7 +60,7 @@ const app = new Elysia()
 	.use(assistant)
 	.use(exportRoute)
 	.all("/rpc/*", async ({ request }: { request: Request }) => {
-		const context = createRPCContext({ headers: request.headers });
+		const context = await createRPCContext({ headers: request.headers });
 		const { response } = await rpcHandler.handle(request, {
 			prefix: "/rpc",
 			context,
