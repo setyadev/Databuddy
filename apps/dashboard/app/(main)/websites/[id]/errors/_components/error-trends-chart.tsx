@@ -3,7 +3,15 @@
 import { ArrowCounterClockwiseIcon, BugIcon } from "@phosphor-icons/react";
 import dynamic from "next/dynamic";
 import { useCallback, useState } from "react";
-import { Area, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from "recharts";
+import {
+	Area,
+	CartesianGrid,
+	Legend,
+	ReferenceArea,
+	Tooltip,
+	XAxis,
+	YAxis,
+} from "recharts";
 import { METRIC_COLORS, METRICS } from "@/components/charts/metrics-constants";
 import { Button } from "@/components/ui/button";
 import { ErrorChartTooltip } from "./error-chart-tooltip";
@@ -17,46 +25,80 @@ const AreaChart = dynamic(
 	() => import("recharts").then((mod) => mod.AreaChart),
 	{ ssr: false }
 );
-const Brush = dynamic(() => import("recharts").then((mod) => mod.Brush), {
-	ssr: false,
-});
 
-interface ErrorTrendsChartProps {
+type ErrorTrendsChartProps = {
 	errorChartData: Array<{
 		date: string;
 		"Total Errors": number;
 		"Affected Users": number;
 	}>;
-}
+};
 
 export const ErrorTrendsChart = ({ errorChartData }: ErrorTrendsChartProps) => {
-	const [zoomDomain, setZoomDomain] = useState<{
-		startIndex?: number;
-		endIndex?: number;
-	}>({});
-	const [isZoomed, setIsZoomed] = useState(false);
+	const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
+	const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
+	const [zoomedData, setZoomedData] = useState<Array<{
+		date: string;
+		"Total Errors": number;
+		"Affected Users": number;
+	}> | null>(null);
+
+	const isZoomed = zoomedData !== null;
+
+	const displayData = zoomedData || errorChartData;
 
 	const resetZoom = useCallback(() => {
-		setZoomDomain({});
-		setIsZoomed(false);
+		setRefAreaLeft(null);
+		setRefAreaRight(null);
+		setZoomedData(null);
 	}, []);
 
-	const handleBrushChange = useCallback(
-		(brushData: { startIndex?: number; endIndex?: number }) => {
-			if (
-				brushData &&
-				brushData.startIndex !== undefined &&
-				brushData.endIndex !== undefined
-			) {
-				setZoomDomain({
-					startIndex: brushData.startIndex,
-					endIndex: brushData.endIndex,
-				});
-				setIsZoomed(true);
-			}
-		},
-		[]
-	);
+	const handleMouseDown = (e: any) => {
+		if (!e?.activeLabel) {
+			return;
+		}
+		setRefAreaLeft(e.activeLabel);
+		setRefAreaRight(null);
+	};
+
+	const handleMouseMove = (e: any) => {
+		if (!(refAreaLeft && e?.activeLabel)) {
+			return;
+		}
+		setRefAreaRight(e.activeLabel);
+	};
+
+	const handleMouseUp = () => {
+		if (!refAreaLeft) {
+			setRefAreaLeft(null);
+			setRefAreaRight(null);
+			return;
+		}
+
+		const rightBoundary = refAreaRight || refAreaLeft;
+
+		const leftIndex = errorChartData.findIndex((d) => d.date === refAreaLeft);
+		const rightIndex = errorChartData.findIndex(
+			(d) => d.date === rightBoundary
+		);
+
+		if (leftIndex === -1 || rightIndex === -1) {
+			setRefAreaLeft(null);
+			setRefAreaRight(null);
+			return;
+		}
+
+		const [startIndex, endIndex] =
+			leftIndex < rightIndex
+				? [leftIndex, rightIndex]
+				: [rightIndex, leftIndex];
+
+		const zoomed = errorChartData.slice(startIndex, endIndex + 1);
+		setZoomedData(zoomed);
+
+		setRefAreaLeft(null);
+		setRefAreaRight(null);
+	};
 
 	if (!errorChartData.length) {
 		return (
@@ -94,38 +136,47 @@ export const ErrorTrendsChart = ({ errorChartData }: ErrorTrendsChartProps) => {
 						Error occurrences and impact over time
 					</p>
 				</div>
-				{errorChartData.length > 5 && (
-					<div className="flex items-center gap-2">
-						{isZoomed && (
-							<Button
-								className="h-7 px-2 text-xs"
-								onClick={resetZoom}
-								size="sm"
-								variant="outline"
-							>
-								<ArrowCounterClockwiseIcon
-									className="mr-1 h-3 w-3"
-									size={16}
-									weight="duotone"
-								/>
-								Reset Zoom
-							</Button>
-						)}
-						<div className="text-muted-foreground text-xs">Drag to zoom</div>
-					</div>
-				)}
+				<div className="flex items-center gap-2">
+					{isZoomed && (
+						<Button
+							className="h-7 px-2 text-xs"
+							onClick={resetZoom}
+							size="sm"
+							variant="outline"
+						>
+							<ArrowCounterClockwiseIcon
+								className="mr-1 h-3 w-3"
+								size={16}
+								weight="duotone"
+							/>
+							Reset Zoom
+						</Button>
+					)}
+					<div className="text-muted-foreground text-xs">Drag to zoom</div>
+				</div>
 			</div>
 			<div className="flex-1 p-2">
-				<div style={{ width: "100%", height: 300 }}>
+				<div
+					className="relative select-none"
+					style={{
+						width: "100%",
+						height: 300,
+						userSelect: refAreaLeft ? "none" : "auto",
+						WebkitUserSelect: refAreaLeft ? "none" : "auto",
+					}}
+				>
 					<ResponsiveContainer height="100%" width="100%">
 						<AreaChart
-							data={errorChartData}
+							data={displayData}
 							margin={{
 								top: 10,
 								right: 10,
 								left: 0,
-								bottom: errorChartData.length > 5 ? 35 : 5,
+								bottom: displayData.length > 5 ? 35 : 5,
 							}}
+							onMouseDown={handleMouseDown}
+							onMouseMove={handleMouseMove}
+							onMouseUp={handleMouseUp}
 						>
 							<defs>
 								<linearGradient
@@ -203,9 +254,18 @@ export const ErrorTrendsChart = ({ errorChartData }: ErrorTrendsChartProps) => {
 								wrapperStyle={{
 									fontSize: "10px",
 									paddingTop: "5px",
-									bottom: errorChartData.length > 5 ? 20 : 0,
+									bottom: displayData.length > 5 ? 20 : 0,
 								}}
 							/>
+							{refAreaLeft && refAreaRight && (
+								<ReferenceArea
+									fill="var(--sidebar-ring)"
+									fillOpacity={0.15}
+									strokeOpacity={0.3}
+									x1={refAreaLeft}
+									x2={refAreaRight}
+								/>
+							)}
 							<Area
 								dataKey="Total Errors"
 								fill="url(#colorTotalErrors)"
@@ -224,19 +284,6 @@ export const ErrorTrendsChart = ({ errorChartData }: ErrorTrendsChartProps) => {
 								strokeWidth={2}
 								type="monotone"
 							/>
-							{errorChartData.length > 5 && (
-								<Brush
-									dataKey="date"
-									endIndex={zoomDomain.endIndex}
-									fill="var(--muted)"
-									fillOpacity={0.1}
-									height={25}
-									onChange={handleBrushChange}
-									padding={{ top: 5, bottom: 5 }}
-									startIndex={zoomDomain.startIndex}
-									stroke="var(--border)"
-								/>
-							)}
 						</AreaChart>
 					</ResponsiveContainer>
 				</div>

@@ -199,7 +199,7 @@ export const websiteNavigation: NavigationSection[] = [
 		createNavItem("Performance", ActivityIcon, "/performance", {
 			rootLevel: false,
 		}),
-		createNavItem("Geographic Data", MapPinIcon, "/map", { rootLevel: false }),
+		createNavItem("Geographic", MapPinIcon, "/map", { rootLevel: false }),
 		createNavItem("Error Tracking", BugIcon, "/errors", { rootLevel: false }),
 	]),
 	createNavSection("Product Analytics", TrendUpIcon, [
