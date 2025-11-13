@@ -346,7 +346,7 @@ export function StatCard({
 					</div>
 
 					{hasValidChartData && (
-						<div className="-mb-0.5 sm:-mb-1 [--chart-color:var(--primary)] group-hover:[--chart-color:var(--primary-500)]">
+						<div className="-mb-0.5 sm:-mb-1 [--chart-color:var(--primary)]">
 							<MiniChart
 								data={chartData}
 								formatChartValue={formatChartValue}
