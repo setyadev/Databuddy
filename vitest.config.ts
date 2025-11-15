@@ -6,8 +6,6 @@ export default defineConfig({
         globals: true,
         environment: "node",
         coverage: {
-            provider: "v8",
-            reporter: ["text", "json", "html"],
             exclude: [
                 "node_modules/**",
                 "dist/**",
@@ -26,7 +24,6 @@ export default defineConfig({
         },
         mockReset: true,
         restoreMocks: true,
-        setupFiles: [],
     },
     resolve: {
         alias: {
