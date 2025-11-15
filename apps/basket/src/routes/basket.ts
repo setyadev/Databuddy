@@ -439,17 +439,6 @@ const app = new Elysia()
 
 			const { clientId, userAgent, ip } = validation;
 
-			logger.info(
-				{
-					website_id: clientId,
-					batch_size: body.length,
-					total_size_bytes: JSON.stringify(body).length,
-					total_size_kb: (JSON.stringify(body).length / 1024).toFixed(2),
-					timestamp: Date.now(),
-				},
-				`Batch event received: ${body.length} events`
-			);
-
 			const trackEvents: AnalyticsEvent[] = [];
 			const errorEvents: ErrorEvent[] = [];
 			const webVitalsEvents: WebVitalsEvent[] = [];

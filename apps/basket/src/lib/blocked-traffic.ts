@@ -23,23 +23,6 @@ async function _logBlockedTrafficAsync(
 				VALIDATION_LIMITS.STRING_MAX_LENGTH
 			) || "";
 
-		const payloadSize = JSON.stringify(body || {}).length;
-		const eventType = body?.type || "unknown";
-		logger.warn({
-			website_id: clientId || "unknown",
-			event_type: eventType,
-			block_reason: blockReason,
-			block_category: blockCategory,
-			bot_name: botName || "N/A",
-			size_bytes: payloadSize,
-			size_kb: (payloadSize / 1024).toFixed(2),
-			timestamp: Date.now(),
-			session_id: body?.sessionId || body?.payload?.sessionId || "unknown",
-			anonymous_id: body?.anonymousId?.substring(0, 8) || body?.payload?.anonymousId?.substring(0, 8) || "unknown",
-			ip_prefix: ip.substring(0, 7),
-			country: "pending",
-		}, `Event blocked: ${blockReason}`);
-
 		const { anonymizedIP, country, region, city } = await getGeo(ip);
 		const { browserName, browserVersion, osName, osVersion, deviceType } =
 			parseUserAgent(userAgent);
