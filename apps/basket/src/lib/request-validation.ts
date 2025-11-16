@@ -1,4 +1,3 @@
-import { cacheable } from "@databuddy/redis";
 import { Autumn as autumn } from "autumn-js";
 import { getWebsiteByIdV2, isValidOrigin } from "../hooks/auth";
 import { extractIpFromRequest } from "../utils/ip-geo";
@@ -23,23 +22,6 @@ type ValidationResult = {
 type ValidationError = {
 	error: { status: string; message: string };
 };
-
-const checkAutumnCached = cacheable(
-	async (ownerId: string) => {
-		const result = await autumn.check({
-			customer_id: ownerId,
-			feature_id: "events",
-			send_event: true,
-		});
-		return result.data;
-	},
-	{
-		expireInSec: 60,
-		prefix: "autumn_check_events",
-		staleWhileRevalidate: true,
-		staleTime: 30,
-	}
-);
 
 /**
  * Validate incoming request for analytics events
@@ -116,7 +98,12 @@ export function validateRequest(
 
 		if (website.ownerId) {
 			try {
-				const data = await checkAutumnCached(website.ownerId);
+				const result = await autumn.check({
+					customer_id: website.ownerId,
+					feature_id: "events",
+					send_event: true,
+				});
+				const data = result.data;
 
 				if (data && !(data.allowed || data.overage_allowed)) {
 					logBlockedTraffic(
