@@ -5,7 +5,6 @@
  * and platform identification.
  */
 
-import { cacheable } from "@databuddy/redis";
 import { bots } from "@databuddy/shared/lists/bots";
 import { UAParser } from "ua-parser-js";
 import { logger } from "../lib/logger";
@@ -22,9 +21,9 @@ export type UserAgentInfo = {
 };
 
 /**
- * Parse user agent to extract useful information (uncached)
+ * Parse user agent to extract useful information
  */
-function _parseUserAgent(userAgent: string): {
+export function parseUserAgent(userAgent: string): {
 	browserName?: string;
 	browserVersion?: string;
 	osName?: string;
@@ -48,7 +47,7 @@ function _parseUserAgent(userAgent: string): {
 	try {
 		const parser = new UAParser(userAgent);
 		const result = parser.getResult();
-
+		
 		return {
 			browserName: result.browser.name || undefined,
 			browserVersion: result.browser.version || undefined,
@@ -71,16 +70,6 @@ function _parseUserAgent(userAgent: string): {
 		};
 	}
 }
-
-/**
- * Parse user agent to extract useful information (cached)
- */
-export const parseUserAgent = cacheable(_parseUserAgent, {
-	expireInSec: 3600,
-	prefix: "ua_parse",
-	staleWhileRevalidate: true,
-	staleTime: 1800,
-});
 
 export function detectBot(
 	userAgent: string,

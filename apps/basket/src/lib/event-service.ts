@@ -59,7 +59,7 @@ export function insertError(
 
 		const { anonymizedIP, country, region } = geoData;
 		const { browserName, browserVersion, osName, osVersion, deviceType } =
-			await parseUserAgent(userAgent);
+			parseUserAgent(userAgent);
 
 		const errorEvent: ErrorEvent = {
 			id: randomUUID(),
@@ -141,7 +141,7 @@ export async function insertWebVitals(
 
 	const { country, region } = await getGeo(ip);
 	const { browserName, browserVersion, osName, osVersion, deviceType } =
-		await parseUserAgent(userAgent);
+		parseUserAgent(userAgent);
 
 	const webVitalsEvent: WebVitalsEvent = {
 		id: randomUUID(),
@@ -331,7 +331,7 @@ export function insertTrackEvent(
 			deviceType,
 			deviceBrand,
 			deviceModel,
-		} = await parseUserAgent(userAgent);
+		} = parseUserAgent(userAgent);
 		const now = Date.now();
 
 		const trackEvent: AnalyticsEvent = {
