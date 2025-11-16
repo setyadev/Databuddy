@@ -1,7 +1,13 @@
 import { type Span, SpanStatusCode, trace } from "@opentelemetry/api";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
+import { resourceFromAttributes } from "@opentelemetry/resources";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-node";
+import {
+    ATTR_SERVICE_NAME,
+    ATTR_SERVICE_VERSION,
+} from "@opentelemetry/semantic-conventions";
+import pkg from "../../package.json";
 
 let sdk: NodeSDK | null = null;
 
@@ -14,6 +20,10 @@ export function initTracing(): void {
     }
 
     sdk = new NodeSDK({
+        resource: resourceFromAttributes({
+            [ATTR_SERVICE_NAME]: "basket",
+            [ATTR_SERVICE_VERSION]: pkg.version,
+        }),
         traceExporter: new OTLPTraceExporter({
             url: "https://api.axiom.co/v1/traces",
             headers: {
@@ -50,10 +60,7 @@ function getTracer() {
 /**
  * Create a span - replaces @elysiajs/opentelemetry record
  */
-export function record<T>(
-    name: string,
-    fn: () => Promise<T> | T
-): Promise<T> {
+export function record<T>(name: string, fn: () => Promise<T> | T): Promise<T> {
     const tracer = getTracer();
     return tracer.startActiveSpan(name, async (span) => {
         try {
@@ -65,7 +72,9 @@ export function record<T>(
                 code: SpanStatusCode.ERROR,
                 message: error instanceof Error ? error.message : String(error),
             });
-            span.recordException(error instanceof Error ? error : new Error(String(error)));
+            span.recordException(
+                error instanceof Error ? error : new Error(String(error))
+            );
             throw error;
         } finally {
             span.end();
@@ -90,7 +99,11 @@ export function setAttributes(
 /**
  * Start HTTP request span
  */
-export function startRequestSpan(method: string, path: string, route?: string): Span {
+export function startRequestSpan(
+    method: string,
+    path: string,
+    route?: string
+): Span {
     const tracer = getTracer();
     return tracer.startSpan(`${method} ${route ?? path}`, {
         kind: 1, // SERVER
@@ -105,7 +118,11 @@ export function startRequestSpan(method: string, path: string, route?: string): 
 /**
  * End HTTP request span
  */
-export function endRequestSpan(span: Span, statusCode: number, startTime: number): void {
+export function endRequestSpan(
+    span: Span,
+    statusCode: number,
+    startTime: number
+): void {
     span.setAttribute("http.status_code", statusCode);
     span.setAttribute("http.response.duration_ms", Date.now() - startTime);
     span.setStatus({
