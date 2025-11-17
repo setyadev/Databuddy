@@ -45,7 +45,6 @@ const app = new Elysia()
 		activeContext: null as ReturnType<typeof context.active> | null | undefined,
 		startTime: 0,
 	})
-	.use(publicApi)
 	.use(
 		cors({
 			credentials: true,
@@ -57,6 +56,7 @@ const app = new Elysia()
 			],
 		})
 	)
+	.use(publicApi)
 	.use(health)
 	.onBeforeHandle(function startTrace({ request, path, store }) {
 		const method = request.method;
