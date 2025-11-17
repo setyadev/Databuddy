@@ -21,7 +21,6 @@ import {
 	startRequestSpan,
 } from "./lib/tracing";
 import { assistant } from "./routes/assistant";
-// import { customSQL } from './routes/custom-sql';
 import { exportRoute } from "./routes/export";
 import { health } from "./routes/health";
 import { publicApi } from "./routes/public";
@@ -112,10 +111,11 @@ const app = new Elysia()
 		"/rpc/*",
 		async ({ request, store }) => {
 			try {
-				// Run RPC handler within the active trace context if available
+				const headers = new Headers(request.headers);
+
 				const handler = async () => {
 					const rpcContext = await createRPCContext({
-						headers: request.headers,
+						headers,
 					});
 					const { response } = await rpcHandler.handle(request, {
 						prefix: "/rpc",
