@@ -1,9 +1,9 @@
 import "./polyfills/compression";
 
 import { Elysia } from "elysia";
-import { logger } from "./lib/logger";
 import { disconnectProducer, getProducerStats } from "./lib/producer";
 import {
+	captureError,
 	endRequestSpan,
 	initTracing,
 	shutdownTracing,
@@ -15,19 +15,29 @@ import { closeGeoIPReader } from "./utils/ip-geo";
 
 initTracing();
 
+process.on("unhandledRejection", (reason, _promise) => {
+	console.error("Unhandled Rejection:", reason);
+	captureError(reason);
+});
+
+process.on("uncaughtException", (error) => {
+	console.error("Uncaught Exception:", error);
+	captureError(error);
+});
+
 process.on("SIGTERM", async () => {
-	logger.info("SIGTERM received, shutting down gracefully...");
+	console.log("SIGTERM received, shutting down gracefully...");
 	await Promise.all([disconnectProducer(), shutdownTracing()]).catch((error) =>
-		logger.error({ error }, "Shutdown error")
+		console.error("Shutdown error:", error)
 	);
 	closeGeoIPReader();
 	process.exit(0);
 });
 
 process.on("SIGINT", async () => {
-	logger.info("SIGINT received, shutting down gracefully...");
+	console.log("SIGINT received, shutting down gracefully...");
 	await Promise.all([disconnectProducer(), shutdownTracing()]).catch((error) =>
-		logger.error({ error }, "Shutdown error")
+		console.error("Shutdown error:", error)
 	);
 	closeGeoIPReader();
 	process.exit(0);
@@ -78,6 +88,10 @@ const app = new Elysia()
 		}
 	})
 	.onBeforeHandle(function startTrace({ request, path, store }) {
+		if (request.method === "OPTIONS" || path === "/health") {
+			return;
+		}
+
 		const method = request.method;
 		const startTime = Date.now();
 		const span = startRequestSpan(method, request.url, path);
@@ -103,7 +117,7 @@ const app = new Elysia()
 		if (code === "NOT_FOUND") {
 			return new Response(null, { status: 404 });
 		}
-		logger.error({ error }, "Error in basket service");
+		captureError(error);
 	})
 	.options("*", () => new Response(null, { status: 204 }))
 	.use(basketRouter)
@@ -119,7 +133,7 @@ const app = new Elysia()
 
 const port = process.env.PORT || 4000;
 
-logger.info(`Starting basket service on port ${port}`);
+console.log(`Starting basket service on port ${port}`);
 
 export default {
 	fetch: app.fetch,

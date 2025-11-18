@@ -7,7 +7,7 @@
 
 import { bots } from "@databuddy/shared/lists/bots";
 import { UAParser } from "ua-parser-js";
-import { logger } from "../lib/logger";
+import { captureError } from "../lib/tracing";
 
 export type UserAgentInfo = {
 	bot: {
@@ -58,7 +58,7 @@ export function parseUserAgent(userAgent: string): {
 			deviceModel: result.device.model || undefined,
 		};
 	} catch (error) {
-		logger.error({ error, userAgent }, "Failed to parse user agent");
+		captureError(error, { userAgent, message: "Failed to parse user agent" });
 		return {
 			browserName: undefined,
 			browserVersion: undefined,

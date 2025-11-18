@@ -3,8 +3,8 @@ import type { BlockedTraffic } from "@databuddy/db";
 import { extractIpFromRequest, getGeo } from "../utils/ip-geo";
 import { parseUserAgent } from "../utils/user-agent";
 import { sanitizeString, VALIDATION_LIMITS } from "../utils/validation";
-import { logger } from "./logger";
 import { sendEvent } from "./producer";
+import { captureError } from "./tracing";
 
 async function _logBlockedTrafficAsync(
 	request: Request,
@@ -85,7 +85,7 @@ async function _logBlockedTrafficAsync(
 
 		sendEvent("analytics-blocked-traffic", blockedEvent);
 	} catch (error) {
-		logger.error({ error }, "Failed to log blocked traffic");
+		captureError(error, { message: "Failed to log blocked traffic" });
 	}
 }
 
@@ -110,6 +110,6 @@ export function logBlockedTraffic(
 		botName,
 		clientId
 	).catch((error) => {
-		logger.error({ error }, "Failed to log blocked traffic");
+		captureError(error, { message: "Failed to log blocked traffic" });
 	});
 }

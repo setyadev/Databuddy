@@ -83,6 +83,28 @@ export function record<T>(name: string, fn: () => Promise<T> | T): Promise<T> {
 }
 
 /**
+ * Capture error in active span
+ */
+export function captureError(
+	error: unknown,
+	attributes?: Record<string, string | number | boolean>
+): void {
+	const span = trace.getActiveSpan();
+	if (!span) {
+		return;
+	}
+
+	span.recordException(error instanceof Error ? error : new Error(String(error)));
+	span.setStatus({ code: SpanStatusCode.ERROR });
+
+	if (attributes) {
+		for (const [key, value] of Object.entries(attributes)) {
+			span.setAttribute(key, value);
+		}
+	}
+}
+
+/**
  * Set attributes on active span - replaces @elysiajs/opentelemetry setAttributes
  */
 export function setAttributes(

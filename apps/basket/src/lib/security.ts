@@ -1,6 +1,6 @@
 import crypto, { createHash } from "node:crypto";
 import { cacheable, redis } from "@databuddy/redis";
-import { logger } from "./logger";
+import { captureError } from "./tracing";
 
 const EXIT_EVENT_TTL = 172_800;
 const STANDARD_EVENT_TTL = 86_400;
@@ -22,11 +22,11 @@ export const getDailySalt = cacheable(
 			const newSalt = crypto.randomBytes(32).toString("hex");
 			const SALT_TTL = 60 * 60 * 24;
 			redis.setex(saltKey, SALT_TTL, newSalt).catch((error) => {
-				logger.error({ error }, "Failed to set daily salt in Redis");
+				captureError(error, { message: "Failed to set daily salt in Redis" });
 			});
 			return newSalt;
 		} catch (error) {
-			logger.error({ error }, "Failed to get daily salt from Redis");
+			captureError(error, { message: "Failed to get daily salt from Redis" });
 			return crypto.randomBytes(32).toString("hex");
 		}
 	},
@@ -44,7 +44,10 @@ export function saltAnonymousId(anonymousId: string, salt: string): string {
 			.update(anonymousId + salt)
 			.digest("hex");
 	} catch (error) {
-		logger.error({ error, anonymousId }, "Failed to salt anonymous ID");
+		captureError(error, {
+			message: "Failed to salt anonymous ID",
+			anonymousId,
+		});
 		return createHash("sha256").update(anonymousId).digest("hex");
 	}
 }
@@ -60,10 +63,11 @@ export async function checkDuplicate(
 		const result = await redis.set(key, "1", "EX", ttl, "NX");
 		return result === null;
 	} catch (error) {
-		logger.error(
-			{ error, eventId, eventType },
-			"Failed to check duplicate event in Redis"
-		);
+		captureError(error, {
+			message: "Failed to check duplicate event in Redis",
+			eventId,
+			eventType,
+		});
 		return false;
 	}
 }

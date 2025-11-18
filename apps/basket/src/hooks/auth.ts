@@ -7,8 +7,7 @@
 
 import { and, db, eq, member, websites } from "@databuddy/db";
 import { cacheable } from "@databuddy/redis";
-import { logger } from "../lib/logger";
-import { record, setAttributes } from "../lib/tracing";
+import { captureError, record, setAttributes } from "../lib/tracing";
 
 type Website = typeof websites.$inferSelect;
 
@@ -47,26 +46,23 @@ async function _resolveOwnerId(website: Website): Promise<string | null> {
 				return orgMember.userId;
 			}
 
-			logger.warn(
-				{ websiteId: website.id, organizationId: website.organizationId },
-				"Organization owner not found for website"
-			);
+			// logger.warn(
+			// 	{ websiteId: website.id, organizationId: website.organizationId },
+			// 	"Organization owner not found for website"
+			// );
 		} catch (error) {
-			logger.error(
-				{
-					websiteId: website.id,
-					organizationId: website.organizationId,
-					error,
-				},
-				"Failed to fetch organization owner"
-			);
+			captureError(error, {
+				message: "Failed to fetch organization owner",
+				websiteId: website.id,
+				organizationId: website.organizationId || "unknown",
+			});
 		}
 	}
 
-	logger.warn(
-		{ websiteId: website.id },
-		"No owner could be determined for website"
-	);
+	// logger.warn(
+	// 	{ websiteId: website.id },
+	// 	"No owner could be determined for website"
+	// );
 	return null;
 }
 
@@ -97,7 +93,10 @@ export const getWebsiteById = cacheable(
 
 			return { ...website, ownerId };
 		} catch (error) {
-			logger.error({ error, websiteId: id }, "Failed to get website by ID");
+			captureError(error, {
+				message: "Failed to get website by ID",
+				websiteId: id,
+			});
 			return null;
 		}
 	},
@@ -130,7 +129,7 @@ export function isValidOrigin(
 		return true;
 	}
 	if (!allowedDomain?.trim()) {
-		logger.warn({ originHeader }, "[isValidOrigin] No allowed domain provided");
+		// logger.warn({ originHeader }, "[isValidOrigin] No allowed domain provided");
 		return false;
 	}
 	try {
@@ -144,10 +143,11 @@ export function isValidOrigin(
 			isSubdomain(normalizedOriginDomain, normalizedAllowedDomain)
 		);
 	} catch (error) {
-		logger.error(
-			{ error, originHeader, allowedDomain },
-			"[isValidOrigin] Validation failed"
-		);
+		captureError(error, {
+			message: "[isValidOrigin] Validation failed",
+			originHeader,
+			allowedDomain,
+		});
 		return false;
 	}
 }
@@ -181,7 +181,7 @@ export function normalizeDomain(domain: string): string {
 		}
 		return finalDomain;
 	} catch (error) {
-		logger.error({ error, domain }, "Failed to parse domain");
+		captureError(error, { message: "Failed to parse domain", domain });
 		throw new Error(`Invalid domain format: ${domain}`);
 	}
 }
@@ -301,10 +301,11 @@ export function isValidOriginSecure(
 			isSubdomain(normalizedOriginDomain, normalizedAllowedDomain)
 		);
 	} catch (error) {
-		logger.error(
-			{ error, originHeader, allowedDomain },
-			"[isValidOriginSecure] Validation failed"
-		);
+		captureError(error, {
+			message: "[isValidOriginSecure] Validation failed",
+			originHeader,
+			allowedDomain,
+		});
 		return false;
 	}
 }
@@ -336,10 +337,10 @@ const getWebsiteByIdWithOwnerCached = cacheable(
 			const ownerId = await _resolveOwnerId(website);
 			return { ...website, ownerId };
 		} catch (error) {
-			logger.error(
-				{ error, websiteId: id },
-				"Failed to get website by ID from cache"
-			);
+			captureError(error, {
+				message: "Failed to get website by ID from cache",
+				websiteId: id,
+			});
 			return null;
 		}
 	},
@@ -374,7 +375,10 @@ export function getWebsiteByIdV2(id: string): Promise<WebsiteWithOwner | null> {
 
 			return result;
 		} catch (error) {
-			logger.error({ error, websiteId: id }, "Failed to get website by ID V2");
+			captureError(error, {
+				message: "Failed to get website by ID V2",
+				websiteId: id,
+			});
 			setAttributes({
 				"website.lookup_failed": true,
 			});

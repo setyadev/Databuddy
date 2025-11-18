@@ -6,8 +6,7 @@ import {
 	BadMethodCallError,
 	Reader,
 } from "@maxmind/geoip2-node";
-import { logger } from "../lib/logger";
-import { record, setAttributes } from "../lib/tracing";
+import { captureError, record, setAttributes } from "../lib/tracing";
 
 interface GeoIPReader extends Reader {
 	city(ip: string): City;
@@ -41,7 +40,7 @@ async function loadDatabaseFromCdn(): Promise<Buffer> {
 
 		return dbBuffer;
 	} catch (error) {
-		logger.error({ error }, "Failed to load database from CDN");
+		captureError(error, { message: "Failed to load database from CDN" });
 		throw error;
 	}
 }
@@ -65,7 +64,7 @@ function loadDatabase() {
 			dbBuffer = await loadDatabaseFromCdn();
 			reader = Reader.openBuffer(dbBuffer) as GeoIPReader;
 		} catch (error) {
-			logger.error({ error }, "Failed to load GeoIP database");
+			captureError(error, { message: "Failed to load GeoIP database" });
 			loadError = error as Error;
 			reader = null;
 			dbBuffer = null;
@@ -98,7 +97,7 @@ function lookupGeoLocation(ip: string): Promise<{
 			try {
 				await loadDatabase();
 			} catch (error) {
-				logger.error({ error }, "Failed to load database for IP lookup");
+				captureError(error, { message: "Failed to load database for IP lookup" });
 				setAttributes({
 					"geo.lookup_failed": true,
 					"geo.error": "database_load_failed",
@@ -140,7 +139,7 @@ function lookupGeoLocation(ip: string): Promise<{
 				});
 				return { country: undefined, region: undefined, city: undefined };
 			}
-			logger.error({ error }, "Error looking up IP");
+			captureError(error, { message: "Error looking up IP" });
 			setAttributes({
 				"geo.lookup_failed": true,
 				"geo.error": "lookup_error",

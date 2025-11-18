@@ -8,8 +8,7 @@ import {
 	validatePayloadSize,
 } from "../utils/validation";
 import { logBlockedTraffic } from "./blocked-traffic";
-import { logger } from "./logger";
-import { record, setAttributes } from "./tracing";
+import { captureError, record, setAttributes } from "./tracing";
 
 type ValidationResult = {
 	success: boolean;
@@ -130,7 +129,9 @@ export function validateRequest(
 					"autumn.overage_allowed": data?.overage_allowed ?? false,
 				});
 			} catch (error) {
-				logger.error({ error }, "Autumn check failed, allowing event through");
+				captureError(error, {
+					message: "Autumn check failed, allowing event through",
+				});
 				setAttributes({
 					"autumn.check_failed": true,
 				});
@@ -179,7 +180,6 @@ export function validateRequest(
 		};
 	});
 }
-
 /**
  * Check if request is from a bot
  * Returns error object if bot detected, undefined otherwise
@@ -213,3 +213,4 @@ export function checkForBot(
 	}
 	return;
 }
+

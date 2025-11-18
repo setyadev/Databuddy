@@ -14,10 +14,9 @@ import {
 	validatePerformanceMetric,
 	validateSessionId,
 } from "../utils/validation";
-import { logger } from "./logger";
 import { sendEvent, sendEventBatch } from "./producer";
 import { checkDuplicate, getDailySalt, saltAnonymousId } from "./security";
-import { record, setAttributes } from "./tracing";
+import { captureError, record, setAttributes } from "./tracing";
 
 /**
  * Insert an error event into the database
@@ -109,7 +108,7 @@ export function insertError(
 		try {
 			sendEvent("analytics-errors", errorEvent);
 		} catch (error) {
-			logger.error({ error, eventId }, "Failed to queue error event");
+			captureError(error, { eventId });
 		}
 	});
 }
@@ -173,7 +172,7 @@ export async function insertWebVitals(
 	try {
 		sendEvent("analytics-web-vitals", webVitalsEvent);
 	} catch (error) {
-		logger.error({ error, eventId }, "Failed to queue web vitals event");
+		captureError(error, { eventId });
 		// Don't throw - event is buffered or sent async
 	}
 }
@@ -224,7 +223,7 @@ export async function insertCustomEvent(
 	try {
 		sendEvent("analytics-custom-events", customEvent);
 	} catch (error) {
-		logger.error({ error, eventId }, "Failed to queue custom event");
+		captureError(error, { eventId });
 		// Don't throw - event is buffered or sent async
 	}
 }
@@ -273,7 +272,7 @@ export async function insertOutgoingLink(
 	try {
 		sendEvent("analytics-outgoing-links", outgoingLinkEvent);
 	} catch (error) {
-		logger.error({ error, eventId }, "Failed to queue outgoing link event");
+		captureError(error, { eventId });
 	}
 }
 
@@ -425,7 +424,7 @@ export function insertTrackEvent(
 		try {
 			sendEvent("analytics-events", trackEvent);
 		} catch (error) {
-			logger.error({ error, eventId }, "Failed to queue track event");
+			captureError(error, { eventId });
 		}
 	});
 }
@@ -446,10 +445,7 @@ export function insertTrackEventsBatch(
 		try {
 			await sendEventBatch("analytics-events", events);
 		} catch (error) {
-			logger.error(
-				{ error, count: events.length },
-				"Failed to queue track events batch"
-			);
+			captureError(error, { count: events.length });
 		}
 	});
 }
@@ -468,10 +464,7 @@ export function insertErrorsBatch(events: ErrorEvent[]): Promise<void> {
 		try {
 			await sendEventBatch("analytics-errors", events);
 		} catch (error) {
-			logger.error(
-				{ error, count: events.length },
-				"Failed to queue errors batch"
-			);
+			captureError(error, { count: events.length });
 		}
 	});
 }
@@ -490,10 +483,7 @@ export function insertWebVitalsBatch(events: WebVitalsEvent[]): Promise<void> {
 		try {
 			await sendEventBatch("analytics-web-vitals", events);
 		} catch (error) {
-			logger.error(
-				{ error, count: events.length },
-				"Failed to queue web vitals batch"
-			);
+			captureError(error, { count: events.length });
 		}
 	});
 }
@@ -512,10 +502,7 @@ export function insertCustomEventsBatch(events: CustomEvent[]): Promise<void> {
 		try {
 			await sendEventBatch("analytics-custom-events", events);
 		} catch (error) {
-			logger.error(
-				{ error, count: events.length },
-				"Failed to queue custom events batch"
-			);
+			captureError(error, { count: events.length });
 		}
 	});
 }
@@ -536,10 +523,7 @@ export function insertOutgoingLinksBatch(
 		try {
 			await sendEventBatch("analytics-outgoing-links", events);
 		} catch (error) {
-			logger.error(
-				{ error, count: events.length },
-				"Failed to queue outgoing links batch"
-			);
+			captureError(error, { count: events.length });
 		}
 	});
 }

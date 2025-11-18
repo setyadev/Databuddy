@@ -7,8 +7,8 @@ import {
 	emailEventSchema,
 } from "@databuddy/validation";
 import { Elysia } from "elysia";
-import { logger } from "../lib/logger";
 import { sendEvent } from "../lib/producer";
+import { captureError } from "../lib/tracing";
 
 const expectedKey = process.env.EMAIL_API_KEY;
 
@@ -16,7 +16,7 @@ function validateApiKey(request: Request): boolean {
 	const apiKey = request.headers.get("x-api-key");
 
 	if (!expectedKey) {
-		logger.error("EMAIL_API_KEY not configured");
+		captureError(new Error("EMAIL_API_KEY not configured"));
 		return false;
 	}
 
@@ -48,9 +48,12 @@ function insertEmailEvent(emailData: EmailEventInput): void {
 	try {
 		sendEvent("analytics-email-events", emailEvent);
 
-		logger.info({ emailEvent }, "Email event sent to Kafka successfully");
+		// logger.info({ emailEvent }, "Email event sent to Kafka successfully");
 	} catch (error) {
-		logger.error({ error, emailEvent }, "Failed to send email event to Kafka");
+		captureError(error, {
+			message: "Failed to send email event to Kafka",
+			email_id: emailEvent.event_id,
+		});
 	}
 }
 
@@ -105,7 +108,7 @@ const app = new Elysia()
 					event_id: emailHash,
 				};
 			} catch (error) {
-				logger.error({ error }, "Email event processing failed");
+				captureError(error, { message: "Email event processing failed" });
 				return {
 					status: "error",
 					message: "Failed to process email event",
