@@ -69,7 +69,9 @@ export function validateRequest(
 			"client.id": clientId,
 		});
 
-		const website = await getWebsiteByIdV2(clientId);
+		const website = await record("getWebsiteByIdV2", () =>
+			getWebsiteByIdV2(clientId)
+		);
 		if (!website || website.status !== "ACTIVE") {
 			logBlockedTraffic(
 				request,
@@ -97,11 +99,13 @@ export function validateRequest(
 
 		if (website.ownerId) {
 			try {
-				const result = await autumn.check({
-					customer_id: website.ownerId,
-					feature_id: "events",
-					send_event: true,
-				});
+				const result = await record("autumn.check", () =>
+					autumn.check({
+						customer_id: website.ownerId || "",
+						feature_id: "events",
+						send_event: true,
+					})
+				);
 				const data = result.data;
 
 				if (data && !(data.allowed || data.overage_allowed)) {
@@ -139,7 +143,12 @@ export function validateRequest(
 		}
 
 		const origin = request.headers.get("origin");
-		if (origin && !isValidOrigin(origin, website.domain)) {
+		if (
+			origin &&
+			!(await record("isValidOrigin", () =>
+				isValidOrigin(origin, website.domain)
+			))
+		) {
 			logBlockedTraffic(
 				request,
 				body,
