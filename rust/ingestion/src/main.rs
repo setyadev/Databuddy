@@ -8,7 +8,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use models::Event;
+use models::{Event, WebVitalsEventPayload, ErrorEventPayload, OutgoingLinkPayload};
 use producer::KafkaProducer;
 use serde_json::json;
 use std::net::SocketAddr;
@@ -38,6 +38,9 @@ async fn main() {
     let app = Router::new()
         .route("/health", get(health_check))
         .route("/", post(ingest_single))
+        .route("/vitals", post(ingest_vitals))
+        .route("/errors", post(ingest_errors))
+        .route("/outgoing", post(ingest_outgoing))
         .route("/batch", post(ingest_batch))
         .layer(cors)
         .with_state(producer);
@@ -69,11 +72,9 @@ async fn health_check(State(producer): State<KafkaProducer>) -> Json<serde_json:
         }
     }))
 }
-async fn ingest_single(
-    State(producer): State<KafkaProducer>,
-    Json(payload): Json<Event>
-) -> Response {
-    if let Err(err) = validate_event(&payload) {
+
+async fn process_event(producer: KafkaProducer, event: Event) -> Response {
+    if let Err(err) = validate_event(&event) {
         return (StatusCode::BAD_REQUEST, Json(json!({
             "status": "error",
             "message": "Validation failed",
@@ -81,11 +82,11 @@ async fn ingest_single(
         }))).into_response();
     }
 
-    let event_type = get_event_type(&payload);
+    let event_type = get_event_type(&event);
     let topic = get_topic_name(event_type);
-    let event_id = get_event_id(&payload).unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+    let event_id = get_event_id(&event).unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
 
-    let payload_str = match serde_json::to_string(&payload) {
+    let payload_str = match serde_json::to_string(&event) {
         Ok(s) => s,
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
             "status": "error",
@@ -109,6 +110,34 @@ async fn ingest_single(
             }))).into_response()
         }
     }
+}
+
+async fn ingest_single(
+    State(producer): State<KafkaProducer>,
+    Json(payload): Json<Event>
+) -> Response {
+    process_event(producer, payload).await
+}
+
+async fn ingest_vitals(
+    State(producer): State<KafkaProducer>,
+    Json(payload): Json<WebVitalsEventPayload>
+) -> Response {
+    process_event(producer, Event::WebVitals(payload)).await
+}
+
+async fn ingest_errors(
+    State(producer): State<KafkaProducer>,
+    Json(payload): Json<ErrorEventPayload>
+) -> Response {
+    process_event(producer, Event::Error(payload)).await
+}
+
+async fn ingest_outgoing(
+    State(producer): State<KafkaProducer>,
+    Json(payload): Json<OutgoingLinkPayload>
+) -> Response {
+    process_event(producer, Event::OutgoingLink(payload)).await
 }
 
 async fn ingest_batch(
@@ -196,7 +225,6 @@ async fn ingest_batch(
         "results": results
     })).into_response()
 }
-
 fn validate_event(event: &Event) -> Result<(), validator::ValidationErrors> {
     match event {
         Event::Track(e) => e.validate(),
@@ -236,5 +264,4 @@ fn get_event_id(event: &Event) -> Option<String> {
         Event::OutgoingLink(e) => Some(e.eventId.clone()),
     }
 }
-
 

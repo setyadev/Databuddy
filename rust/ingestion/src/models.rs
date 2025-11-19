@@ -112,10 +112,23 @@ pub struct MinimalBasePayload {
 }
 
 #[derive(Debug, Deserialize, Serialize, Validate, Clone)]
-pub struct ErrorEventPayload {
+pub struct ContextBasePayload {
     #[serde(flatten)]
     #[validate(nested)]
     pub base: MinimalBasePayload,
+
+    pub screen_resolution: Option<String>,
+    pub viewport_size: Option<String>,
+    pub connection_type: Option<String>,
+    pub language: Option<String>,
+    pub timezone: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Validate, Clone)]
+pub struct ErrorEventPayload {
+    #[serde(flatten)]
+    #[validate(nested)]
+    pub base: ContextBasePayload,
 
     #[validate(length(max = 2048))]
     pub message: String,
@@ -137,7 +150,7 @@ pub struct ErrorEventPayload {
 pub struct WebVitalsEventPayload {
     #[serde(flatten)]
     #[validate(nested)]
-    pub base: MinimalBasePayload,
+    pub base: ContextBasePayload,
 
     pub fcp: Option<f64>,
     pub lcp: Option<f64>,
