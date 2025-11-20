@@ -34,7 +34,6 @@ export const AutocompleteInput = memo(
 		);
 		const containerRef = useRef<HTMLDivElement>(null);
 
-		// Handle click outside to close dropdown
 		useEffect(() => {
 			const handleClickOutside = (event: MouseEvent) => {
 				if (

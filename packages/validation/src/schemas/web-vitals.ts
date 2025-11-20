@@ -1,4 +1,4 @@
-import z from "zod/v4";
+import z from "zod";
 import { MAX_FUTURE_MS, MIN_TIMESTAMP, VALIDATION_LIMITS } from "../constants";
 
 const timestampSchema = z

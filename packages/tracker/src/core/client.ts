@@ -35,7 +35,7 @@ export class HttpClient {
         const dynamicEntries = await Promise.all(
             Object.entries(this.dynamicHeaderFns).map(async ([key, fn]) => [
                 key,
-                await (typeof fn === 'function' ? fn() : fn),
+                await fn(),
             ])
         );
         return { ...this.staticHeaders, ...Object.fromEntries(dynamicEntries) };
@@ -80,9 +80,10 @@ export class HttpClient {
                 const text = await response.text();
                 return text ? JSON.parse(text) : null;
             }
-        } catch (error: any) {
+        } catch (error) {
             const isNetworkError =
-                error.name === 'TypeError' || error.name === 'NetworkError';
+                error instanceof TypeError || (error instanceof Error && error.name === 'NetworkError');
+
             if (retryCount < this.maxRetries && isNetworkError) {
                 const jitter = Math.random() * 0.3 + 0.85;
                 const delay = this.initialRetryDelay * 2 ** retryCount * jitter;
@@ -98,4 +99,3 @@ export class HttpClient {
         return this.post(url, data, options, 0);
     }
 }
-

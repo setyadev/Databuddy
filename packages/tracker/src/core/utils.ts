@@ -25,16 +25,15 @@ export function isOptedOut(): boolean {
     if (typeof window === "undefined") {
         return false;
     }
-    const win = window as any;
     try {
         return (
             localStorage.getItem('databuddy_opt_out') === 'true' ||
             localStorage.getItem('databuddy_disabled') === 'true' ||
-            win.databuddyOptedOut === true ||
-            win.databuddyDisabled === true
+            window.databuddyOptedOut === true ||
+            window.databuddyDisabled === true
         );
     } catch {
-        return win.databuddyOptedOut === true || win.databuddyDisabled === true;
+        return window.databuddyOptedOut === true || window.databuddyDisabled === true;
     }
 }
 
@@ -42,10 +41,9 @@ export function getTrackerConfig(): TrackerOptions {
     if (typeof window === "undefined") {
         return {};
     }
-    const win = window as any;
     const script = document.currentScript as HTMLScriptElement;
 
-    const globalConfig = win.databuddyConfig || {};
+    const globalConfig = window.databuddyConfig || {};
     let config: TrackerOptions = { ...globalConfig };
 
     if (script) {

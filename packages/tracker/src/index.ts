@@ -1,24 +1,24 @@
 import { BaseTracker } from "./core/tracker";
 import type { TrackerOptions } from "./core/types";
 import { generateUUIDv4, getTrackerConfig, isOptedOut } from "./core/utils";
-import { ErrorTracker } from "./errors";
-import { initInteractionTracking, initScrollDepthTracking } from "./plugins";
-import { VitalsTracker } from "./vitals";
+import {
+    initErrorTracking,
+    initInteractionTracking,
+    initScrollDepthTracking,
+    initWebVitalsTracking,
+} from "./plugins";
 
 class Databuddy extends BaseTracker {
-    vitalsTracker?: VitalsTracker;
-    errorTracker?: ErrorTracker;
-
     constructor(options: TrackerOptions) {
         super(options);
 
         // Initialize specialized trackers if enabled
         if (this.options.trackWebVitals) {
-            this.vitalsTracker = new VitalsTracker(options);
+            initWebVitalsTracking(this);
         }
 
         if (this.options.trackErrors) {
-            this.errorTracker = new ErrorTracker(options);
+            initErrorTracking(this);
         }
 
         // Initialize standard tracking
@@ -42,11 +42,19 @@ class Databuddy extends BaseTracker {
         }
 
         if (typeof window !== "undefined") {
-            (window as any).db = {
+            window.databuddy = {
                 track: (name: string, props?: any) => this.track(name, props),
                 screenView: (props?: any) => this.screenView(props),
                 identify: () => { },
+                clear: () => { }, // Placeholder
+                flush: () => {
+                    this.flushBatch();
+                },
+                setGlobalProperties: () => { }, // Placeholder
+                trackCustomEvent: () => { }, // Placeholder
+                options: this.options,
             };
+            window.db = window.databuddy;
         }
     }
 
@@ -137,7 +145,9 @@ class Databuddy extends BaseTracker {
                     const properties: Record<string, any> = {};
                     for (const attr of trackable.attributes) {
                         if (attr.name.startsWith("data-") && attr.name !== "data-track") {
-                            const key = attr.name.slice(5).replace(/-./g, (x: string) => x[1].toUpperCase());
+                            const key = attr.name
+                                .slice(5)
+                                .replace(/-./g, (x: string) => x[1].toUpperCase());
                             properties[key] = attr.value;
                         }
                     }
@@ -165,53 +175,52 @@ function initializeDatabuddy() {
     if (typeof window === "undefined") {
         return;
     }
-    const win = window as any;
-    if (win.databuddy) {
+    if (window.databuddy) {
         return;
     }
 
     if (isOptedOut()) {
-        win.databuddy = {
+        window.databuddy = {
             track: () => { },
             screenView: () => { },
+            identify: () => { },
             clear: () => { },
             flush: () => { },
             setGlobalProperties: () => { },
             trackCustomEvent: () => { },
             options: { disabled: true },
         };
-        win.db = win.databuddy;
+        window.db = window.databuddy;
         return;
     }
 
     const config = getTrackerConfig();
     if (config.clientId) {
-        win.databuddy = new Databuddy(config);
+        new Databuddy(config);
     }
 }
 
 if (typeof window !== "undefined") {
     initializeDatabuddy();
 
-    const win = window as any;
-    win.databuddyOptOut = () => {
+    window.databuddyOptOut = () => {
         try {
-            localStorage.setItem('databuddy_opt_out', 'true');
-            localStorage.setItem('databuddy_disabled', 'true');
+            localStorage.setItem("databuddy_opt_out", "true");
+            localStorage.setItem("databuddy_disabled", "true");
         } catch (_e) { }
-        win.databuddyOptedOut = true;
-        win.databuddyDisabled = true;
-        if (win.databuddy) {
-            win.databuddy.options.disabled = true;
+        window.databuddyOptedOut = true;
+        window.databuddyDisabled = true;
+        if (window.databuddy) {
+            window.databuddy.options.disabled = true;
         }
     };
 
-    win.databuddyOptIn = () => {
+    window.databuddyOptIn = () => {
         try {
-            localStorage.removeItem('databuddy_opt_out');
-            localStorage.removeItem('databuddy_disabled');
+            localStorage.removeItem("databuddy_opt_out");
+            localStorage.removeItem("databuddy_disabled");
         } catch (_e) { }
-        win.databuddyOptedOut = false;
-        win.databuddyDisabled = false;
+        window.databuddyOptedOut = false;
+        window.databuddyDisabled = false;
     };
 }

@@ -89,7 +89,6 @@ export class BaseTracker {
             return false;
         }
         if (this.options.ignoreBotDetection) {
-            console.log("[Tracker] Ignoring bot detection");
             return false;
         }
         const ua = navigator.userAgent || "";
@@ -97,12 +96,12 @@ export class BaseTracker {
             HEADLESS_CHROME_REGEX.test(ua) || PHANTOMJS_REGEX.test(ua);
 
         const isBot = Boolean(
-            (navigator as any).webdriver ||
+            navigator.webdriver ||
+            window.webdriver ||
             isHeadless ||
-            (window as any).callPhantom ||
-            (window as any)._phantom ||
-            (window as any).selenium ||
-            (window as any).webdriver ||
+            window.callPhantom ||
+            window._phantom ||
+            window.selenium ||
             document.documentElement.getAttribute("webdriver") === "true"
         );
         return isBot;
@@ -202,8 +201,6 @@ export class BaseTracker {
         return now;
     }
 
-    // ... (Additional methods like getBaseContext, getMaskedPath, etc. will go here)
-
     protected shouldSkipTracking(): boolean {
         return !!(this.options.disabled || this.isLikelyBot || this.isServer());
     }
@@ -239,9 +236,7 @@ export class BaseTracker {
     }
 
     protected getConnectionInfo() {
-        const nav = navigator as any;
-        const connection =
-            nav.connection || nav.mozConnection || nav.webkitConnection;
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
         if (!connection) {
             return { connection_type: null, rtt: null, downlink: null };
         }
@@ -312,7 +307,7 @@ export class BaseTracker {
         return {
             path,
             title: document.title,
-            referrer: (this as any).global?.referrer || document.referrer || "direct",
+            referrer: document.referrer || "direct",
             screen_resolution,
             viewport_size,
             timezone,

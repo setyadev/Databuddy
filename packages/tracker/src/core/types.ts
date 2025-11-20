@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/style/useConsistentTypeDefinitions: Interfaces are needed for declaration merging */
 export type TrackerOptions = {
     // Basic Config
     disabled?: boolean;
@@ -74,3 +75,36 @@ export interface TrackEvent extends BaseEvent {
     };
 }
 
+export type DatabuddyGlobal = {
+    track: (name: string, props?: any) => void;
+    screenView: (props?: any) => void;
+    identify: () => void;
+    clear: () => void;
+    flush: () => void;
+    setGlobalProperties: () => void;
+    trackCustomEvent: () => void;
+    options: TrackerOptions;
+}
+
+declare global {
+    interface Window {
+        databuddy?: DatabuddyGlobal;
+        db?: DatabuddyGlobal;
+        databuddyOptedOut?: boolean;
+        databuddyDisabled?: boolean;
+        databuddyConfig?: TrackerOptions;
+        databuddyOptOut?: () => void;
+        databuddyOptIn?: () => void;
+        callPhantom?: any;
+        _phantom?: any;
+        selenium?: any;
+        webdriver?: any;
+    }
+
+    interface Navigator {
+        connection?: any;
+        mozConnection?: any;
+        webkitConnection?: any;
+        webdriver?: boolean;
+    }
+}
