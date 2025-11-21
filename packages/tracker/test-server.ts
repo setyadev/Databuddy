@@ -17,9 +17,14 @@ serve({
         <html>
           <head>
             <title>Databuddy Tracker Test</title>
+            <script src="/dist/databuddy-debug.js" data-client-id="dev-test-id"></script>
           </head>
           <body>
             <h1>Tracker Test Page</h1>
+            <button onclick="databuddy.track('test_click')">Track Click</button>
+            <button onclick="databuddyOptOut()">Opt Out</button>
+            <button onclick="databuddyOptIn()">Opt In</button>
+            <p>Open console to debug</p>
           </body>
         </html>
       `,

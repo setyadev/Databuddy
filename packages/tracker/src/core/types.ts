@@ -19,6 +19,7 @@ export type TrackerOptions = {
     trackInteractions?: boolean;
     trackErrors?: boolean;
     ignoreBotDetection?: boolean;
+    usePixel?: boolean;
 
     // Sampling & Retries
     samplingRate?: number;

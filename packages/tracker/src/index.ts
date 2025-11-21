@@ -3,6 +3,7 @@ import type { TrackerOptions } from "./core/types";
 import { generateUUIDv4, getTrackerConfig, isOptedOut } from "./core/utils";
 import { initErrorTracking } from "./plugins/errors";
 import { initInteractionTracking } from "./plugins/interactions";
+import { initPixelTracking } from "./plugins/pixel";
 import { initScrollDepthTracking } from "./plugins/scroll-depth";
 import { initWebVitalsTracking } from "./plugins/vitals";
 
@@ -19,6 +20,10 @@ export class Databuddy extends BaseTracker {
         }
 
         if (!this.isServer()) {
+            if (this.options.usePixel) {
+                initPixelTracking(this);
+            }
+
             if (this.options.trackScreenViews) {
                 this.trackScreenViews();
                 setTimeout(() => this.screenView(), 0);

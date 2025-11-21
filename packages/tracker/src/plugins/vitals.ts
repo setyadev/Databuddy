@@ -10,13 +10,13 @@ export function initWebVitalsTracking(tracker: BaseTracker) {
     const metrics: {
         fcp: number | undefined;
         lcp: number | undefined;
-        cls: number;
+        cls: number | undefined;
         inp: number | undefined;
         ttfb: number | undefined;
     } = {
         fcp: undefined,
         lcp: undefined,
-        cls: 0,
+        cls: undefined,
         inp: undefined,
         ttfb: undefined,
     };
@@ -37,7 +37,7 @@ export function initWebVitalsTracking(tracker: BaseTracker) {
             timestamp: Date.now(),
             fcp: clamp(metrics.fcp),
             lcp: clamp(metrics.lcp),
-            cls: metrics.cls,
+            cls: clamp(metrics.cls),
             inp: metrics.inp,
             ttfb: clamp(metrics.ttfb),
             ...tracker.getBaseContext(),
@@ -59,7 +59,7 @@ export function initWebVitalsTracking(tracker: BaseTracker) {
                 metrics.lcp = Math.round(metric.value);
                 break;
             case "CLS":
-                metrics.cls = metric.value;
+                metrics.cls = Math.round(metric.value);
                 break;
             case "INP":
                 metrics.inp = Math.round(metric.value);
@@ -73,14 +73,12 @@ export function initWebVitalsTracking(tracker: BaseTracker) {
         logger.log(`Web Vitals Metric: ${metric.name}`, metric.value);
     };
 
-    // Initialize web-vitals listeners
     onFCP(handleMetric);
     onLCP(handleMetric);
     onCLS(handleMetric);
     onINP(handleMetric);
     onTTFB(handleMetric);
 
-    // Send report on page hide / unload
     const report = () => {
         if (reported) {
             return;

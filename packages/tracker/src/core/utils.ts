@@ -72,7 +72,7 @@ export function getTrackerConfig(): TrackerOptions {
                     } catch (_e) {
                         value = [];
                     }
-                } else if (value === 'true') {
+                } else if (value === 'true' || value === '') {
                     value = true;
                 } else if (value === 'false') {
                     value = false;
