@@ -1,18 +1,17 @@
 "use client";
 
 import { Check, Copy } from "lucide-react";
-import * as React from "react";
+import { type ButtonHTMLAttributes, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
-interface CopyButtonProps
-	extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface CopyButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	value: string;
 }
 
 export function CopyButton({ value, className, ...props }: CopyButtonProps) {
-	const [hasCopied, setHasCopied] = React.useState(false);
+	const [hasCopied, setHasCopied] = useState(false);
 
-	React.useEffect(() => {
+	useEffect(() => {
 		setTimeout(() => {
 			setHasCopied(false);
 		}, 2000);
