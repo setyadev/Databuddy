@@ -100,12 +100,12 @@ export class BaseTracker {
 
 		const isBot = Boolean(
 			navigator.webdriver ||
-				window.webdriver ||
-				isHeadless ||
-				window.callPhantom ||
-				window._phantom ||
-				window.selenium ||
-				document.documentElement.getAttribute("webdriver") === "true"
+			window.webdriver ||
+			isHeadless ||
+			window.callPhantom ||
+			window._phantom ||
+			window.selenium ||
+			document.documentElement.getAttribute("webdriver") === "true"
 		);
 		return isBot;
 	}
@@ -288,7 +288,7 @@ export class BaseTracker {
 		let timezone: string | undefined;
 		try {
 			timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-		} catch {}
+		} catch { }
 
 		return {
 			path,

@@ -17,10 +17,11 @@ test.describe("Web Vitals Tracking", () => {
 		const requestPromise = page.waitForRequest(
 			(req) =>
 				req.url().includes("/basket.databuddy.cc/vitals") &&
-				req.method() === "POST"
+				req.method() === "POST",
+			{ timeout: 5000 }
 		);
 
-		await page.goto("/");
+		await page.goto("/test");
 
 		await page.evaluate(() => {
 			(window as any).databuddyConfig = {

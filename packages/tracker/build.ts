@@ -1,4 +1,4 @@
-import { build } from "bun";
+import { build, spawn } from "bun";
 
 const common = {
 	target: "browser",
@@ -35,3 +35,20 @@ for (const { src, name } of entrypoints) {
 		},
 	});
 }
+
+console.log("Running tests...");
+
+const testProcess = spawn(["bun", "run", "test:e2e"], {
+	stdout: "inherit",
+	stderr: "inherit",
+	cwd: import.meta.dir,
+});
+
+const exitCode = await testProcess.exited;
+
+if (exitCode !== 0) {
+	console.error("Tests failed! Build/Release aborted.");
+	process.exit(exitCode);
+}
+
+console.log("Tests passed!");

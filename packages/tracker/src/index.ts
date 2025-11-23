@@ -24,10 +24,9 @@ export class Databuddy extends BaseTracker {
 				initPixelTracking(this);
 			}
 
-			if (this.options.trackScreenViews) {
-				this.trackScreenViews();
-				setTimeout(() => this.screenView(), 0);
-			}
+			this.trackScreenViews();
+			setTimeout(() => this.screenView(), 0);
+
 			if (this.options.trackOutgoingLinks) {
 				this.trackOutgoingLinks();
 			}
@@ -46,13 +45,13 @@ export class Databuddy extends BaseTracker {
 			window.databuddy = {
 				track: (name: string, props?: any) => this.track(name, props),
 				screenView: (props?: any) => this.screenView(props),
-				identify: () => {},
-				clear: () => {}, // Placeholder
+				identify: () => { },
+				clear: () => { }, // Placeholder
 				flush: () => {
 					this.flushBatch();
 				},
-				setGlobalProperties: () => {}, // Placeholder
-				trackCustomEvent: () => {}, // Placeholder
+				setGlobalProperties: () => { }, // Placeholder
+				trackCustomEvent: () => { }, // Placeholder
 				options: this.options,
 			};
 			window.db = window.databuddy;
@@ -182,13 +181,13 @@ function initializeDatabuddy() {
 
 	if (isOptedOut()) {
 		window.databuddy = {
-			track: () => {},
-			screenView: () => {},
-			identify: () => {},
-			clear: () => {},
-			flush: () => {},
-			setGlobalProperties: () => {},
-			trackCustomEvent: () => {},
+			track: () => { },
+			screenView: () => { },
+			identify: () => { },
+			clear: () => { },
+			flush: () => { },
+			setGlobalProperties: () => { },
+			trackCustomEvent: () => { },
 			options: { disabled: true },
 		};
 		window.db = window.databuddy;
@@ -208,7 +207,7 @@ if (typeof window !== "undefined") {
 		try {
 			localStorage.setItem("databuddy_opt_out", "true");
 			localStorage.setItem("databuddy_disabled", "true");
-		} catch (_e) {}
+		} catch (_e) { }
 		window.databuddyOptedOut = true;
 		window.databuddyDisabled = true;
 		if (window.databuddy) {
@@ -220,7 +219,7 @@ if (typeof window !== "undefined") {
 		try {
 			localStorage.removeItem("databuddy_opt_out");
 			localStorage.removeItem("databuddy_disabled");
-		} catch (_e) {}
+		} catch (_e) { }
 		window.databuddyOptedOut = false;
 		window.databuddyDisabled = false;
 	};

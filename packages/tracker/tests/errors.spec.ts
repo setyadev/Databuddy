@@ -19,7 +19,7 @@ test.describe("Error Tracking", () => {
 				req.method() === "POST"
 		);
 
-		await page.goto("/");
+		await page.goto("/test");
 
 		// Load dedicated errors script
 		await page.evaluate(() => {
@@ -55,7 +55,7 @@ test.describe("Error Tracking", () => {
 				req.method() === "POST"
 		);
 
-		await page.goto("/");
+		await page.goto("/test");
 		await page.evaluate(() => {
 			(window as any).databuddyConfig = {
 				clientId: "test-client-id",
@@ -83,7 +83,7 @@ test.describe("Error Tracking", () => {
 				req.method() === "POST"
 		);
 
-		await page.goto("/");
+		await page.goto("/test");
 		await page.evaluate(() => {
 			(window as any).databuddyConfig = {
 				clientId: "test-client-id",
@@ -111,7 +111,7 @@ test.describe("Error Tracking", () => {
 				req.method() === "POST"
 		);
 
-		await page.goto("/");
+		await page.goto("/test");
 		await page.evaluate(() => {
 			(window as any).databuddyConfig = {
 				clientId: "test-client-id",

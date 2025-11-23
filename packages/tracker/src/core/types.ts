@@ -8,7 +8,6 @@ export type TrackerOptions = {
 	sdkVersion?: string;
 
 	// Features
-	trackScreenViews?: boolean;
 	trackHashChanges?: boolean;
 	trackAttributes?: boolean;
 	trackOutgoingLinks?: boolean;

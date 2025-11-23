@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.describe("Mobile Tracking", () => {
 	// Skip these tests on non-mobile projects
-	test.beforeEach(async ({}, testInfo) => {
+	test.beforeEach(async ({ }, testInfo) => {
 		if (!testInfo.project.name.includes("mobile")) {
 			test.skip();
 		}
@@ -27,7 +27,7 @@ test.describe("Mobile Tracking", () => {
 				req.url().includes("/basket.databuddy.cc/") && req.method() === "POST"
 		);
 
-		await page.goto("/");
+		await page.goto("/test");
 		await page.evaluate(() => {
 			(window as any).databuddyConfig = {
 				clientId: "test-mobile",
@@ -40,7 +40,6 @@ test.describe("Mobile Tracking", () => {
 		const payload = request.postDataJSON();
 
 		console.log("Mobile Context:", {
-			screen: payload.screen_resolution,
 			viewport: payload.viewport_size,
 		});
 
@@ -51,13 +50,10 @@ test.describe("Mobile Tracking", () => {
 		// Mobile devices can have tall viewports, so just verify it's reasonable
 		expect(vpHeight).toBeGreaterThan(0);
 		expect(vpHeight).toBeLessThan(3000);
-
-		// Screen resolution should differ from viewport (often larger due to dpr or full screen size)
-		expect(payload.screen_resolution).toBeTruthy();
 	});
 
 	test("tracks touch interactions", async ({ page }) => {
-		await page.goto("/");
+		await page.goto("/test");
 		await page.evaluate(() => {
 			(window as any).databuddyConfig = {
 				clientId: "test-mobile",

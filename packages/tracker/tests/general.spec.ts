@@ -15,7 +15,7 @@ test.describe("General Tracking", () => {
 	test("loads and initializes successfully via window.databuddyConfig", async ({
 		page,
 	}) => {
-		await page.goto("/");
+		await page.goto("/test");
 		await page.evaluate(() => {
 			(window as any).databuddyConfig = {
 				clientId: "test-client-id",
@@ -35,7 +35,7 @@ test.describe("General Tracking", () => {
 	});
 
 	test("initializes via data- attributes", async ({ page }) => {
-		await page.goto("/");
+		await page.goto("/test");
 		await page.evaluate(() => {
 			const script = document.createElement("script");
 			script.src = "/dist/databuddy.js";
@@ -56,7 +56,7 @@ test.describe("General Tracking", () => {
 	});
 
 	test("initializes via query parameters", async ({ page }) => {
-		await page.goto("/");
+		await page.goto("/test");
 		await page.evaluate(() => {
 			const script = document.createElement("script");
 			script.src =
@@ -86,7 +86,7 @@ test.describe("General Tracking", () => {
 			);
 		});
 
-		await page.goto("/");
+		await page.goto("/test");
 		await page.evaluate(() => {
 			(window as any).databuddyConfig = {
 				clientId: "test-client-id",
@@ -104,7 +104,7 @@ test.describe("General Tracking", () => {
 	});
 
 	test("tracks custom events via window.db", async ({ page }) => {
-		await page.goto("/");
+		await page.goto("/test");
 		await page.evaluate(() => {
 			(window as any).databuddyConfig = {
 				clientId: "test-client-id",
@@ -150,7 +150,7 @@ test.describe("General Tracking", () => {
 			}
 		});
 
-		await page.goto("/");
+		await page.goto("/test");
 		await page.evaluate(() => {
 			(window as any).databuddyConfig = { clientId: "test-client-id" }; // ignoreBotDetection defaults to false
 		});

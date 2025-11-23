@@ -18,7 +18,7 @@ test.describe("Privacy & Opt-out", () => {
 			}
 		});
 
-		await page.goto("/");
+		await page.goto("/test");
 		await page.evaluate(() => {
 			// Pre-set opt-out in localStorage
 			localStorage.setItem("databuddy_opt_out", "true");
@@ -42,7 +42,7 @@ test.describe("Privacy & Opt-out", () => {
 	});
 
 	test("dynamically opts out and stops tracking", async ({ page }) => {
-		await page.goto("/");
+		await page.goto("/test");
 		await page.evaluate(() => {
 			(window as any).databuddyConfig = {
 				clientId: "test-privacy",

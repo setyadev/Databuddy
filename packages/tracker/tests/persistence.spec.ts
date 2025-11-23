@@ -11,7 +11,7 @@ test.describe("Persistence", () => {
 	});
 
 	test("persists anonymousId across reloads", async ({ page }) => {
-		await page.goto("/");
+		await page.goto("/test");
 		await page.evaluate(() => {
 			(window as any).databuddyConfig = {
 				clientId: "test-persist",
@@ -40,7 +40,7 @@ test.describe("Persistence", () => {
 	});
 
 	test("persists sessionId across reloads", async ({ page }) => {
-		await page.goto("/");
+		await page.goto("/test");
 		await page.evaluate(() => {
 			(window as any).databuddyConfig = {
 				clientId: "test-persist",
