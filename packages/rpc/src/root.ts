@@ -4,6 +4,7 @@ import { assistantRouter } from "./routers/assistant";
 import { autocompleteRouter } from "./routers/autocomplete";
 import { billingRouter } from "./routers/billing";
 import { chatRouter } from "./routers/chat";
+import { exportRouter } from "./routers/export";
 import { flagsRouter } from "./routers/flags";
 import { funnelsRouter } from "./routers/funnels";
 import { goalsRouter } from "./routers/goals";
@@ -26,6 +27,7 @@ export const appRouter = {
 	chat: chatRouter,
 	organizations: organizationsRouter,
 	billing: billingRouter,
+	export: exportRouter,
 };
 
 export type AppRouter = typeof appRouter;

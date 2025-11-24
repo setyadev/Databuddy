@@ -20,7 +20,6 @@
     "@databuddy/db": "workspace:*",
     "@databuddy/redis": "workspace:*",
     "@databuddy/rpc": "workspace:*",
-    "@databuddy/sdk": "^2.2.0",
     "@databuddy/shared": "workspace:*",
     "@elysiajs/cors": "^1.4.0",
     "@opentelemetry/api": "^1.9.0",
@@ -31,16 +30,14 @@
     "@opentelemetry/sdk-node": "^0.208.0",
     "@opentelemetry/sdk-trace-node": "^2.2.0",
     "@opentelemetry/semantic-conventions": "^1.38.0",
+    "@orpc/server": "^1.11.3",
     "@upstash/redis": "^1.35.6",
     "ai": "^5.0.93",
-    "autumn": "^1.0.2",
     "autumn-js": "^0.0.101",
     "dayjs": "^1.11.19",
     "drizzle-orm": "^0.42.0",
     "elysia": "^1.4.16",
     "jszip": "^3.10.1",
-    "pino": "^9.14.0",
-    "pino-pretty": "^13.1.2",
     "zod": "catalog:"
   }
 }

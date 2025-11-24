@@ -21,7 +21,6 @@ import {
 	startRequestSpan,
 } from "./lib/tracing";
 import { assistant } from "./routes/assistant";
-import { exportRoute } from "./routes/export";
 import { health } from "./routes/health";
 import { publicApi } from "./routes/public";
 import { query } from "./routes/query";
@@ -104,7 +103,6 @@ const app = new Elysia()
 	)
 	.use(query)
 	.use(assistant)
-	.use(exportRoute)
 	.all(
 		"/rpc/*",
 		async ({ request, store }) => {
