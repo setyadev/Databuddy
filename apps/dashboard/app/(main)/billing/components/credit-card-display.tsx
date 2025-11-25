@@ -45,7 +45,7 @@ export function CreditCardDisplay({ customer }: CreditCardDisplayProps) {
 			<div
 				className={cn(
 					"absolute inset-0 flex flex-col justify-between overflow-hidden rounded-xl p-4",
-					"bg-linear-to-tr from-foreground to-foreground/80",
+					"bg-linear-to-tr from-foreground to-foreground/80 dark:from-zinc-800 dark:to-zinc-900",
 					"before:pointer-events-none before:absolute before:inset-0 before:z-1 before:rounded-[inherit] before:ring-1 before:ring-white/20 before:ring-inset"
 				)}
 			>

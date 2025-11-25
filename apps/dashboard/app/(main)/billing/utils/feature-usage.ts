@@ -4,80 +4,87 @@ import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(relativeTime);
 
+export type PricingTier = {
+    to: number | "inf";
+    amount: number;
+};
+
 export type FeatureUsage = {
     id: string;
     name: string;
-    used: number;
-    limit: number;
     balance: number;
+    limit: number;
     unlimited: boolean;
-    interval: string | null;
     hasExtraCredits: boolean;
-    totalAvailable: number;
-    includedUsage: number;
+    interval: string | null;
     resetAt: number | null;
-    resetDateFormatted: string | null;
-    resetRelative: string | null;
+    overage: {
+        amount: number;
+        cost: number;
+    } | null;
 };
 
-export function calculateFeatureUsage(feature: CustomerFeature): FeatureUsage {
-    const includedUsage = feature.included_usage ?? 0;
-    const balance = feature.balance ?? 0;
-    const reportedUsage = feature.usage ?? 0;
-
-    const isUnlimited =
-        feature.unlimited ||
-        !Number.isFinite(balance) ||
-        balance === Number.POSITIVE_INFINITY ||
-        balance === Number.NEGATIVE_INFINITY;
-
-    const hasExtraCredits = !isUnlimited && balance > includedUsage;
-    const totalAvailable = isUnlimited ? Number.POSITIVE_INFINITY : balance;
-
-    let actualUsed: number;
-    if (isUnlimited) {
-        actualUsed = 0;
-    } else if (reportedUsage > 0) {
-        actualUsed = reportedUsage;
-    } else if (reportedUsage < 0) {
-        actualUsed = Math.max(0, includedUsage - balance + Math.abs(reportedUsage));
-    } else {
-        actualUsed = Math.max(0, includedUsage - balance);
+function calculateOverageCost(overageAmount: number, tiers?: PricingTier[]): number {
+    if (overageAmount <= 0 || !tiers?.length) {
+        return 0;
     }
 
-    const displayLimit = hasExtraCredits ? balance : includedUsage;
-    const resetAt = feature.next_reset_at ?? null;
+    let remaining = overageAmount;
+    let totalCost = 0;
+    let processed = 0;
+
+    for (const tier of tiers) {
+        const tierLimit = tier.to === "inf" ? Number.POSITIVE_INFINITY : tier.to;
+        const tierSize = tierLimit - processed;
+        const unitsInTier = Math.min(remaining, tierSize);
+
+        totalCost += unitsInTier * tier.amount;
+        remaining -= unitsInTier;
+        processed = tierLimit;
+
+        if (remaining <= 0) {
+            break;
+        }
+    }
+
+    return totalCost;
+}
+
+export function calculateFeatureUsage(
+    feature: CustomerFeature,
+    planLimit?: number,
+    pricingTiers?: PricingTier[]
+): FeatureUsage {
+    const balance = feature.balance ?? 0;
+    const limit = planLimit ?? feature.included_usage ?? 0;
+
+    const unlimited =
+        feature.unlimited ||
+        !Number.isFinite(balance) ||
+        balance === Number.POSITIVE_INFINITY;
+
+    const hasExtraCredits = !unlimited && balance > limit;
+
+    // Overage when balance is negative
+    const overageAmount = balance < 0 ? Math.abs(balance) : 0;
+    const overage = overageAmount > 0
+        ? { amount: overageAmount, cost: calculateOverageCost(overageAmount, pricingTiers) }
+        : null;
 
     return {
         id: feature.id,
         name: feature.name,
-        used: actualUsed,
-        limit: isUnlimited ? Number.POSITIVE_INFINITY : displayLimit,
         balance,
-        unlimited: isUnlimited,
-        interval: feature.interval ?? null,
+        limit: unlimited ? Number.POSITIVE_INFINITY : hasExtraCredits ? balance : limit,
+        unlimited,
         hasExtraCredits,
-        totalAvailable,
-        includedUsage,
-        resetAt,
-        resetDateFormatted: resetAt ? dayjs(resetAt).format("MMM D, YYYY") : null,
-        resetRelative: resetAt ? dayjs(resetAt).fromNow() : null,
+        interval: feature.interval ?? null,
+        resetAt: feature.next_reset_at ?? null,
+        overage,
     };
 }
 
-export function calculateAllFeatureUsage(
-    features: Record<string, CustomerFeature> | undefined
-): FeatureUsage[] {
-    if (!features) {
-        return [];
-    }
-    return Object.values(features).map(calculateFeatureUsage);
-}
-
 export function formatCompactNumber(num: number): string {
-    if (num >= 1_000_000_000_000) {
-        return `${(num / 1_000_000_000_000).toFixed(1)}T`;
-    }
     if (num >= 1_000_000_000) {
         return `${(num / 1_000_000_000).toFixed(1)}B`;
     }
@@ -106,17 +113,12 @@ export function getResetText(feature: FeatureUsage): string {
     }
 
     const resetDate = dayjs(feature.resetAt);
-    const now = dayjs();
-    const hoursUntil = resetDate.diff(now, "hour");
-    const daysUntil = resetDate.diff(now, "day");
+    const daysUntil = resetDate.diff(dayjs(), "day");
 
-    let resetString = "";
-
-    if (hoursUntil <= 0) {
+    let resetString: string;
+    if (daysUntil <= 0) {
         resetString = "Resets soon";
-    } else if (hoursUntil < 24) {
-        resetString = `Resets in ${hoursUntil}h`;
-    } else if (daysUntil <= 1) {
+    } else if (daysUntil === 1) {
         resetString = "Resets tomorrow";
     } else if (daysUntil < 14) {
         resetString = `Resets in ${daysUntil}d`;
@@ -124,10 +126,6 @@ export function getResetText(feature: FeatureUsage): string {
         resetString = `Resets on ${resetDate.format("MMM D")}`;
     }
 
-    if (feature.interval && INTERVAL_LABELS[feature.interval]) {
-        const label = INTERVAL_LABELS[feature.interval];
-        return `${label} limit · ${resetString}`;
-    }
-
-    return resetString;
+    const label = feature.interval ? INTERVAL_LABELS[feature.interval] : null;
+    return label ? `${label} limit · ${resetString}` : resetString;
 }

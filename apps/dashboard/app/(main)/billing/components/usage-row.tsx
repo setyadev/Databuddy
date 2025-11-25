@@ -7,6 +7,7 @@ import {
 	GiftIcon,
 	LightningIcon,
 	UsersIcon,
+	WarningIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { memo } from "react";
@@ -17,6 +18,16 @@ import {
 	formatCompactNumber,
 	getResetText,
 } from "../utils/feature-usage";
+
+function formatCurrency(amount: number): string {
+	if (amount >= 1000) {
+		return `$${(amount / 1000).toFixed(1)}K`;
+	}
+	if (amount >= 1) {
+		return `$${amount.toFixed(2)}`;
+	}
+	return `$${amount.toFixed(4)}`;
+}
 
 const FEATURE_ICONS: Record<string, typeof ChartBarIcon> = {
 	event: ChartBarIcon,
@@ -37,28 +48,19 @@ function getFeatureIcon(name: string): typeof ChartBarIcon {
 	return ChartBarIcon;
 }
 
-type UsageRowProps = {
-	feature: FeatureUsage;
-};
-
 export const UsageRow = memo(function UsageRowComponent({
 	feature,
-}: UsageRowProps) {
-	const percentage = feature.unlimited
-		? 0
-		: feature.limit > 0
-			? Math.min((feature.used / feature.limit) * 100, 100)
-			: 0;
-
-	const isNearLimit =
-		!(feature.unlimited || feature.hasExtraCredits) &&
-		(percentage > 80 || feature.balance < feature.limit * 0.2);
-
-	const isOverLimit =
-		!feature.unlimited && (percentage >= 100 || feature.balance <= 0);
+}: {
+	feature: FeatureUsage;
+}) {
+	const remainingPercent = feature.unlimited
+		? 100
+		: Math.min(Math.max((feature.balance / feature.limit) * 100, 0), 100);
+	const hasNormalLimit = !(feature.unlimited || feature.hasExtraCredits);
+	const isLow = hasNormalLimit && remainingPercent < 20;
+	const hasOverage = feature.overage !== null;
 
 	const Icon = getFeatureIcon(feature.name);
-	const resetText = getResetText(feature);
 
 	return (
 		<div className="px-5 py-4">
@@ -83,53 +85,76 @@ export const UsageRow = memo(function UsageRowComponent({
 									Bonus
 								</Badge>
 							)}
+							{hasOverage && (
+								<Badge
+									className="bg-destructive/10 text-destructive"
+									variant="secondary"
+								>
+									<WarningIcon className="mr-1" size={10} weight="fill" />
+									Overage
+								</Badge>
+							)}
 						</div>
 						<div className="flex items-center gap-1 text-muted-foreground text-sm">
 							<ClockIcon size={12} />
-							{resetText}
+							{getResetText(feature)}
 						</div>
 					</div>
 				</div>
+
 				{feature.unlimited ? (
 					<Badge variant="secondary">
 						<LightningIcon className="mr-1" size={12} />
 						Unlimited
 					</Badge>
+				) : feature.hasExtraCredits ? (
+					<div className="text-right">
+						<span className="font-mono text-base">
+							{formatCompactNumber(feature.balance)}
+						</span>
+						<div className="text-muted-foreground text-xs">remaining</div>
+					</div>
+				) : feature.overage ? (
+					<div className="text-right">
+						<span className="font-mono text-base text-destructive">
+							+{formatCompactNumber(feature.overage.amount)} over
+						</span>
+						<div className="text-destructive text-xs">
+							~{formatCurrency(feature.overage.cost)} overage
+						</div>
+					</div>
 				) : (
-					<span
-						className={cn(
-							"font-mono text-base",
-							isOverLimit
-								? "text-destructive"
-								: isNearLimit
-									? "text-warning"
-									: "text-foreground"
-						)}
-					>
-						{formatCompactNumber(feature.used)} /{" "}
-						{formatCompactNumber(feature.limit)}
-					</span>
+					<div className="text-right">
+						<span
+							className={cn(
+								"font-mono text-base",
+								isLow ? "text-warning" : "text-foreground"
+							)}
+						>
+							{formatCompactNumber(feature.balance)} /{" "}
+							{formatCompactNumber(feature.limit)}
+						</span>
+						<div className="text-muted-foreground text-xs">remaining</div>
+					</div>
 				)}
 			</div>
 
-			{!feature.unlimited && (
+			{hasNormalLimit && (
 				<div className="flex items-center gap-3">
 					<div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
 						<div
 							className={cn(
 								"h-full transition-all",
-								feature.hasExtraCredits
-									? "bg-primary"
-									: isOverLimit
-										? "bg-destructive"
-										: isNearLimit
-											? "bg-warning"
-											: "bg-primary"
+								hasOverage
+									? "bg-destructive"
+									: isLow
+										? "bg-warning"
+										: "bg-primary"
 							)}
-							style={{ width: `${percentage}%` }}
+							style={{ width: hasOverage ? "100%" : `${remainingPercent}%` }}
 						/>
 					</div>
-					{isNearLimit && (
+					{(isLow || hasOverage) && (
 						<Link
 							className="shrink-0 font-medium text-primary text-sm hover:underline"
 							href="/billing/plans"
