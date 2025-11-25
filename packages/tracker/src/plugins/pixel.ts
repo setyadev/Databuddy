@@ -1,12 +1,25 @@
 import type { BaseTracker } from "../core/tracker";
 
+function safeStringify(value: unknown): string {
+	const seen = new WeakSet();
+	return JSON.stringify(value, (_key, val) => {
+		if (typeof val === "object" && val !== null) {
+			if (seen.has(val)) {
+				return "[Circular]";
+			}
+			seen.add(val);
+		}
+		return val;
+	});
+}
+
 export function initPixelTracking(tracker: BaseTracker) {
 	tracker.options.enableBatching = false;
 
-	const sendToPixel = (endpoint: string, data: any): Promise<any> => {
+	const sendToPixel = (endpoint: string, data: unknown): Promise<{ success: boolean }> => {
 		const params = new URLSearchParams();
 
-		const flatten = (obj: any, prefix = "") => {
+		const flatten = (obj: Record<string, unknown>, prefix = "") => {
 			for (const key in obj) {
 				if (Object.hasOwn(obj, key)) {
 					const value = obj[key];
@@ -18,9 +31,9 @@ export function initPixelTracking(tracker: BaseTracker) {
 
 					if (typeof value === "object" && value !== null) {
 						if (prefix === "" && key === "properties") {
-							params.append(key, JSON.stringify(value));
+							params.append(key, safeStringify(value));
 						} else {
-							params.append(newKey, JSON.stringify(value));
+							params.append(newKey, safeStringify(value));
 						}
 					} else {
 						params.append(newKey, String(value));
@@ -29,7 +42,9 @@ export function initPixelTracking(tracker: BaseTracker) {
 			}
 		};
 
-		flatten(data);
+		if (typeof data === "object" && data !== null) {
+			flatten(data as Record<string, unknown>);
+		}
 
 		if (tracker.options.clientId && !params.has("client_id")) {
 			params.set("client_id", tracker.options.clientId);
@@ -57,13 +72,13 @@ export function initPixelTracking(tracker: BaseTracker) {
 		});
 	};
 
-	tracker.api.fetch = (endpoint: string, data: any) =>
-		sendToPixel(endpoint, data);
+	tracker.api.fetch = <T>(endpoint: string, data: unknown): Promise<T | null> =>
+		sendToPixel(endpoint, data) as Promise<T | null>;
 
-	tracker.sendBeacon = (event: any) => {
-		sendToPixel("/", event);
-		return { success: true };
+	tracker.sendBeacon = (data: unknown, endpoint = "/") => {
+		sendToPixel(endpoint, data);
+		return true;
 	};
 
-	tracker.sendBatchBeacon = () => null;
+	tracker.sendBatchBeacon = () => false;
 }

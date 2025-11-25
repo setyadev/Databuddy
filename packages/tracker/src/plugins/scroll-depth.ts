@@ -10,6 +10,10 @@ export function initScrollDepthTracking(tracker: BaseTracker) {
 		() => {
 			const scrollHeight =
 				document.documentElement.scrollHeight - window.innerHeight;
+			if (scrollHeight <= 0) {
+				tracker.maxScrollDepth = 100;
+				return;
+			}
 			const currentScroll = window.scrollY;
 			const scrollPercent = Math.min(
 				100,

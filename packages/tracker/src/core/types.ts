@@ -67,13 +67,12 @@ export type TrackEvent = BaseEvent & {
 };
 
 export type DatabuddyGlobal = {
-	track: (name: string, props?: any) => void;
-	screenView: (props?: any) => void;
-	identify: () => void;
+	track: (name: string, props?: Record<string, unknown>) => void;
+	screenView: (props?: Record<string, unknown>) => void;
 	clear: () => void;
 	flush: () => void;
-	setGlobalProperties: () => void;
-	trackCustomEvent: () => void;
+	setGlobalProperties: (props: Record<string, unknown>) => void;
+	trackCustomEvent: (name: string, props?: Record<string, unknown>) => void;
 	options: TrackerOptions;
 };
 

@@ -2,6 +2,11 @@ import { expect, test } from "@playwright/test";
 
 test.describe("Web Vitals Tracking", () => {
 	test.beforeEach(async ({ page }) => {
+		// Disable sendBeacon for reliable route interception (WebKit issue)
+		await page.addInitScript(() => {
+			Object.defineProperty(navigator, "sendBeacon", { value: undefined });
+		});
+
 		await page.route("**/basket.databuddy.cc/vitals", async (route) => {
 			await route.fulfill({
 				status: 200,

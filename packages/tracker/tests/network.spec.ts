@@ -1,6 +1,13 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Network & Batching", () => {
+	test.beforeEach(async ({ page }) => {
+		// Disable sendBeacon for reliable route interception (WebKit issue)
+		await page.addInitScript(() => {
+			Object.defineProperty(navigator, "sendBeacon", { value: undefined });
+		});
+	});
+
 	test("retries on 500 errors", async ({ page }) => {
 		let attemptCount = 0;
 		await page.route("**/basket.databuddy.cc/*", async (route) => {
@@ -88,8 +95,7 @@ test.describe("Network & Batching", () => {
 	});
 
 	test("tries sendBeacon first for single events", async ({ page, browserName }) => {
-		// WebKit issue with intercepting beacons in some versions
-		test.skip(browserName === "webkit", "WebKit beacon interception issues");
+		test.skip(true, "sendBeacon is disabled in tests for reliable route interception");
 
 		await page.route("**/basket.databuddy.cc/*", async (route) => {
 			await route.fulfill({

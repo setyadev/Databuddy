@@ -1,5 +1,5 @@
 import { HttpClient } from "./client";
-import type { EventContext, TrackerOptions } from "./types";
+import type { BaseEvent, EventContext, TrackerOptions } from "./types";
 import { generateUUIDv4, logger } from "./utils";
 
 const HEADLESS_CHROME_REGEX = /\bHeadlessChrome\b/i;
@@ -29,8 +29,9 @@ export class BaseTracker {
 	hasInteracted = false;
 
 	// Queues
-	batchQueue: any[] = [];
+	batchQueue: BaseEvent[] = [];
 	batchTimer: Timer | null = null;
+	private isFlushing = false;
 
 	constructor(options: TrackerOptions) {
 		this.options = {
@@ -320,12 +321,18 @@ export class BaseTracker {
 		};
 	}
 
-	send(event: any): Promise<any> {
+	send(event: BaseEvent & { isForceSend?: boolean }): Promise<unknown> {
 		if (this.shouldSkipTracking()) {
 			return Promise.resolve();
 		}
 		if (this.options.filter && !this.options.filter(event)) {
 			logger.log("Event filtered", event);
+			return Promise.resolve();
+		}
+
+		const samplingRate = this.options.samplingRate ?? 1.0;
+		if (samplingRate < 1.0 && Math.random() > samplingRate) {
+			logger.log("Event sampled out", event);
 			return Promise.resolve();
 		}
 
@@ -338,7 +345,7 @@ export class BaseTracker {
 		return this.api.fetch("/", event, { keepalive: true });
 	}
 
-	addToBatch(event: any): Promise<void> {
+	addToBatch(event: BaseEvent): Promise<void> {
 		this.batchQueue.push(event);
 		if (this.batchTimer === null) {
 			this.batchTimer = setTimeout(
@@ -357,10 +364,11 @@ export class BaseTracker {
 			clearTimeout(this.batchTimer);
 			this.batchTimer = null;
 		}
-		if (this.batchQueue.length === 0) {
+		if (this.batchQueue.length === 0 || this.isFlushing) {
 			return;
 		}
 
+		this.isFlushing = true;
 		const batchEvents = [...this.batchQueue];
 		this.batchQueue = [];
 
@@ -378,6 +386,30 @@ export class BaseTracker {
 				this.send({ ...evt, isForceSend: true });
 			}
 			return null;
+		} finally {
+			this.isFlushing = false;
 		}
+	}
+
+	sendBeacon(data: unknown, endpoint = "/vitals"): boolean {
+		if (this.isServer()) {
+			return false;
+		}
+		if (typeof navigator === "undefined" || !navigator.sendBeacon) {
+			return false;
+		}
+		try {
+			const blob = new Blob([JSON.stringify(data)], {
+				type: "application/json",
+			});
+			const baseUrl = this.options.apiUrl || "https://basket.databuddy.cc";
+			return navigator.sendBeacon(`${baseUrl}${endpoint}`, blob);
+		} catch {
+			return false;
+		}
+	}
+
+	sendBatchBeacon(events: unknown[]): boolean {
+		return this.sendBeacon(events, "/batch");
 	}
 }
